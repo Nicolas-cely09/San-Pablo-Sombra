@@ -4,6 +4,40 @@ declare(strict_types=1);
 
 final class PacienteModel
 {
+    public static function tiposDocumentosPaciente(): array
+    {
+        return [
+            'Foto',
+            'Documento Menor',
+            'Documentos padre',
+            'Consentimientos informados',
+            'Carta de autorización programa sombra',
+            'Historia clínica',
+            'Contrato laboral',
+            'PIAR',
+            'Informes de valoración',
+            'Protocolos',
+            'Material de apoyo',
+            'Anexos de seguimiento',
+        ];
+    }
+
+    public static function tiposDocumentosVisiblesProfesional(): array
+    {
+        return [
+            'PIAR',
+            'Informes de valoración',
+            'Protocolos',
+            'Material de apoyo',
+            'Anexos de seguimiento',
+        ];
+    }
+
+    public static function tiposDocumentosCargablesProfesional(): array
+    {
+        return ['Anexos de seguimiento'];
+    }
+
     public function __construct(private PDO $db)
     {
     }

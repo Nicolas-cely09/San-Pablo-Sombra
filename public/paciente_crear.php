@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $csrfToken = generarTokenCsrf();
 $flash = obtenerFlash();
 $profesionalesActivos = $adminController->listarProfesionalesActivos();
+$tiposDocumentos = PacienteModel::tiposDocumentosPaciente();
 ?>
 <!doctype html>
 <html lang="es">
@@ -89,6 +90,9 @@ $profesionalesActivos = $adminController->listarProfesionalesActivos();
         .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         .field { display: flex; flex-direction: column; gap: 4px; }
         .field.full { grid-column: 1 / -1; }
+        .document-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+        .document-row .btn-remove { margin: 0; padding: 8px 10px; background: #ffe6eb; color: #9f2444; }
+        .document-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 
         label { font-size: 0.8rem; color: #4b6383; font-weight: 700; }
 
@@ -169,13 +173,24 @@ $profesionalesActivos = $adminController->listarProfesionalesActivos();
                 </div>
                 <div class="field full"><label>Objetivos del plan</label><textarea name="objetivos_plan" placeholder="Objetivos terapéuticos y acompañamiento esperado"></textarea></div>
                 <div class="field full"><label>Observaciones iniciales</label><textarea name="observaciones_iniciales"></textarea></div>
-                <div class="field"><label>Foto</label><input type="file" name="foto" accept="image/*"></div>
-                <div class="field"><label>Documento Menor</label><input type="file" name="documento_menor"></div>
-                <div class="field"><label>Documentos padre</label><input type="file" name="documentos_padre"></div>
-                <div class="field"><label>Consentimientos informados</label><input type="file" name="consentimientos_informados"></div>
-                <div class="field"><label>Carta de autorización programa sombra</label><input type="file" name="carta_autorizacion"></div>
-                <div class="field"><label>Historia clínica</label><input type="file" name="historia_clinica"></div>
-                <div class="field"><label>Contrato laboral</label><input type="file" name="contrato_laboral"></div>
+                <div class="field full">
+                    <label>Documentos del paciente</label>
+                    <div id="documentosContainer">
+                        <div class="document-row">
+                            <select name="documentos_tipo[]">
+                                <option value="">Selecciona un tipo...</option>
+                                <?php foreach ($tiposDocumentos as $tipoDocumento): ?>
+                                    <option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <input type="file" name="documentos_archivo[]" data-document-file>
+                            <button class="btn btn-remove" type="button" data-remove-document style="display: none;">Quitar</button>
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <button class="btn" type="button" id="addDocument">Añadir otro documento</button>
+                    </div>
+                </div>
             </div>
             <button class="btn" type="submit">Guardar paciente</button>
         </form>
@@ -200,6 +215,25 @@ $profesionalesActivos = $adminController->listarProfesionalesActivos();
 
             tipoDiscapacidad.addEventListener('change', syncOtraDiscapacidad);
             syncOtraDiscapacidad();
+
+            const documentosContainer = document.getElementById('documentosContainer');
+            const addDocument = document.getElementById('addDocument');
+            if (documentosContainer && addDocument) {
+                addDocument.addEventListener('click', function () {
+                    const fila = documentosContainer.querySelector('.document-row').cloneNode(true);
+                    fila.querySelector('select').value = '';
+                    fila.querySelector('[data-document-file]').value = '';
+                    fila.querySelector('[data-remove-document]').style.display = 'block';
+                    documentosContainer.appendChild(fila);
+                });
+
+                documentosContainer.addEventListener('click', function (event) {
+                    const boton = event.target.closest('[data-remove-document]');
+                    if (boton) {
+                        boton.closest('.document-row').remove();
+                    }
+                });
+            }
         })();
     </script>
 

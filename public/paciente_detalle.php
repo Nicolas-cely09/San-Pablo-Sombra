@@ -38,6 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new InvalidArgumentException('Selecciona un tipo y un archivo valido.');
                 }
 
+                $tiposPermitidos = $esVistaAdmin
+                    ? PacienteModel::tiposDocumentosPaciente()
+                    : PacienteModel::tiposDocumentosCargablesProfesional();
+                if (!in_array($tipoAdjunto, $tiposPermitidos, true)) {
+                    throw new RuntimeException('No tienes permiso para cargar este tipo de documento.');
+                }
+
                 $pacienteModel->guardarAdjunto($pacienteId, $archivo, $tipoAdjunto);
                 flash('ok', 'Documento adjunto cargado correctamente.');
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=documentos');
@@ -160,6 +167,12 @@ if (!$paciente) {
 }
 
 $adjuntos = $pacienteModel->listarAdjuntos($pacienteId);
+$tiposVisibles = $esVistaAdmin
+    ? PacienteModel::tiposDocumentosPaciente()
+    : PacienteModel::tiposDocumentosVisiblesProfesional();
+$adjuntosVisibles = array_values(array_filter($adjuntos, static function (array $adjunto) use ($tiposVisibles): bool {
+    return in_array((string) ($adjunto['tipo'] ?? ''), $tiposVisibles, true);
+}));
 $objetivoGeneral = $pacienteModel->obtenerObjetivoGeneral($pacienteId);
 $objetivosEspecificos = $pacienteModel->listarObjetivosEspecificos($pacienteId);
 $informes = $asignacionModel->listarPorPaciente($pacienteId);
@@ -167,7 +180,7 @@ $flash = obtenerFlash();
 $csrfToken = generarTokenCsrf();
 
 $fotoPaciente = null;
-foreach ($adjuntos as $adjunto) {
+foreach ($adjuntosVisibles as $adjunto) {
     $tipo = strtolower((string) ($adjunto['tipo'] ?? ''));
     if (str_contains($tipo, 'foto')) {
         $fotoPaciente = (string) $adjunto['ruta_archivo'];
@@ -418,24 +431,24 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 
     <div class="card section-panel <?= ($seccionActiva === 'documentos') ? 'active' : '' ?>" id="panelDocumentos">
         <h2>Documentos adjuntos</h2>
-        <?php if (count($adjuntos) === 0): ?>
+        <?php if (count($adjuntosVisibles) === 0): ?>
             <p>No hay documentos cargados.</p>
         <?php else: ?>
             <ul>
-                <?php foreach ($adjuntos as $adjunto): ?>
+                <?php foreach ($adjuntosVisibles as $adjunto): ?>
                     <li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-        <?php if ($esVistaAdmin): ?>
+        <?php if ($esVistaAdmin || $esVistaProfesional): ?>
         <form method="post" action="" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="accion" value="subir_adjunto">
             <div class="field-grid">
-                <div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><option value="Foto">Foto</option><option value="Documento Menor">Documento Menor</option><option value="Documentos padre">Documentos padre</option><option value="Consentimientos informados">Consentimientos informados</option><option value="Carta de autorización programa sombra">Carta de autorización programa sombra</option><option value="Historia clínica">Historia clínica</option><option value="Contrato laboral">Contrato laboral</option></select></div>
+                <div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><?php foreach (($esVistaAdmin ? PacienteModel::tiposDocumentosPaciente() : PacienteModel::tiposDocumentosCargablesProfesional()) as $tipoDocumento): ?><option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option><?php endforeach; ?></select></div>
                 <div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div>
             </div>
-            <button class="btn" type="submit">Cargar documento</button>
+            <button class="btn" type="submit"><?= $esVistaAdmin ? 'Cargar documento' : 'Cargar anexo de seguimiento' ?></button>
         </form>
         <?php endif; ?>
     </div>
