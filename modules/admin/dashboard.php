@@ -480,6 +480,9 @@ function badgeEstado(string $estado): string
         .delete-button { width: 34px; height: 34px; padding: 0; border: 1px solid #f2b8b5; border-radius: 7px; background: #fff5f4; color: #b42318; cursor: pointer; font-size: 1.05rem; line-height: 1; }
         .delete-button:hover { background: #b42318; color: #fff; }
         .delete-button:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
+        .add-button { width: 34px; height: 34px; padding: 0; border: 1px solid #c8dced; border-radius: 50%; background: #eef6fc; color: #2877b2; cursor: pointer; font-size: 1.35rem; font-weight: 700; line-height: 1; }
+        .add-button:hover { background: #2877b2; color: #fff; }
+        .add-button:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
 
         table { width: 100%; border-collapse: collapse; min-width: 860px; }
 
@@ -582,9 +585,6 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-profesionales">
-                <div class="actions">
-                    <button id="btn-crear-profesional" class="action-toggle" type="button" data-toggle="crear-profesional">Crear profesional</button>
-                </div>
                 <section class="action-panel" id="crear-profesional">
                     <form method="post" action="" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
@@ -634,7 +634,7 @@ function badgeEstado(string $estado): string
                                 <th>Telefono</th>
                                 <th>Estado</th>
                                 <th>Detalle</th>
-                                <th>Eliminar</th>
+                                <th><button id="btn-crear-profesional" class="add-button" type="button" data-toggle="crear-profesional" title="Crear profesional" aria-label="Crear profesional">+</button></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -659,9 +659,6 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-pacientes">
-                <div class="actions">
-                    <button id="btn-crear-paciente" class="action-toggle" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente">Crear paciente</button>
-                </div>
                 <section class="detalle-frame-panel" id="detalle-paciente-panel">
                     <iframe id="detallePacienteFrame" title="Detalle del paciente" src="about:blank"></iframe>
                     <div class="frame-footer">
@@ -683,7 +680,7 @@ function badgeEstado(string $estado): string
                                 <th>Estado</th>
                                 <th>Profesional</th>
                                 <th>Detalle</th>
-                                <th>Eliminar</th>
+                                <th><button id="btn-crear-paciente" class="add-button" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente" title="Crear paciente" aria-label="Crear paciente">+</button></th>
                             </tr>
                         </thead>
                         <tbody>
