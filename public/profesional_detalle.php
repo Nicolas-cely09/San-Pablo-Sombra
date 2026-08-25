@@ -128,14 +128,14 @@ $baseQuery = $esAdmin ? '?id=' . $profesionalId : '';
             </form>
         </div>
     </div>
-    <div class="card section-panel" id="panelDocumentos">
-        <h2>Documentos adjuntos</h2>
-        <?php if (count($adjuntos) === 0): ?><p>No hay documentos cargados.</p><?php else: ?><ul><?php foreach ($adjuntos as $adjunto): ?><li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li><?php endforeach; ?></ul><?php endif; ?>
-        <?php if ($esAdmin): ?>
-        <form method="post" action="<?= e($baseQuery) ?>" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="subir_adjunto"><div class="field-grid"><div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><?php foreach (UserModel::tiposDocumentosProfesional() as $tipoDocumento): ?><option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option><?php endforeach; ?></select></div><div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div></div><button class="btn" type="submit">Cargar documento</button></form>
-        <?php endif; ?>
-    </div>
-    <div class="card"><div class="actions"><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnModificar">Modificar</button><?php endif; ?><button class="btn btn-secondary" type="button" id="btnDocumentos" aria-expanded="false">Consultar documentos</button></div></div>
+    <?php if ($esAdmin): ?>
+        <div class="card section-panel" id="panelDocumentos">
+            <h2>Documentos adjuntos</h2>
+            <?php if (count($adjuntos) === 0): ?><p>No hay documentos cargados.</p><?php else: ?><ul><?php foreach ($adjuntos as $adjunto): ?><li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li><?php endforeach; ?></ul><?php endif; ?>
+            <form method="post" action="<?= e($baseQuery) ?>" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="subir_adjunto"><div class="field-grid"><div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><?php foreach (UserModel::tiposDocumentosProfesional() as $tipoDocumento): ?><option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option><?php endforeach; ?></select></div><div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div></div><button class="btn" type="submit">Cargar documento</button></form>
+        </div>
+    <?php endif; ?>
+    <div class="card"><div class="actions"><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnModificar">Modificar</button><?php endif; ?><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnDocumentos" aria-expanded="false">Consultar documentos</button><?php endif; ?></div></div>
     <script>
         (function () {
             const form = document.getElementById('formPerfil');
@@ -152,11 +152,13 @@ $baseQuery = $esAdmin ? '?id=' . $profesionalId : '';
                     form.submit();
                 });
             }
-            btnDocumentos.addEventListener('click', function () {
-                const abierto = documentos.classList.toggle('active');
-                btnDocumentos.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-                btnDocumentos.textContent = abierto ? 'Cerrar documentos' : 'Consultar documentos';
-            });
+            if (btnDocumentos && documentos) {
+                btnDocumentos.addEventListener('click', function () {
+                    const abierto = documentos.classList.toggle('active');
+                    btnDocumentos.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                    btnDocumentos.textContent = abierto ? 'Cerrar documentos' : 'Consultar documentos';
+                });
+        }   
             if (tipoSelect && archivoInput) {
                 tipoSelect.addEventListener('change', function () {
                     if (this.value === 'Foto') {
