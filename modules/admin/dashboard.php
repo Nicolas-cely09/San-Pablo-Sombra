@@ -520,8 +520,6 @@ function badgeEstado(string $estado): string
             }
             .sidebar-overlay.active { display: block; }
             .main-menu-row { display: flex; }
-            .skip-link { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 10px 14px; border-radius: 6px; background: #172b3a; color: #fff; font-weight: 800; }
-            .skip-link:focus { top: 12px; }
             button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
             .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
             .stats, .field-grid { grid-template-columns: 1fr; }
@@ -530,7 +528,6 @@ function badgeEstado(string $estado): string
     </style>
 </head>
 <body>
-    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="layout">
         <aside class="sidebar">
@@ -552,7 +549,7 @@ function badgeEstado(string $estado): string
             </nav>
         </aside>
 
-        <main class="main" id="contenido-principal">
+        <main class="main">
             <div class="main-menu-row">
                 <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menú">☰</button>
             </div>

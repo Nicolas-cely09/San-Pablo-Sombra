@@ -236,8 +236,6 @@ function badgeEstadoProfesional(string $estado): string
             border-left: 4px solid var(--blue-sp);
             padding-left: 12px;
         }
-        .skip-link { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 10px 14px; border-radius: 6px; background: #172b3a; color: #fff; font-weight: 800; }
-        .skip-link:focus { top: 12px; }
         button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
 
         .menu-logout {
@@ -439,7 +437,6 @@ function badgeEstadoProfesional(string $estado): string
     </style>
 </head>
 <body>
-    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
     <div class="layout">
         <aside class="sidebar">
             <div class="brand">
@@ -467,7 +464,7 @@ function badgeEstadoProfesional(string $estado): string
             </nav>
         </aside>
 
-        <main class="main" id="contenido-principal">
+        <main class="main">
 
             <?= renderToastFlash($flash) ?>
 
