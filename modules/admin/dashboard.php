@@ -582,6 +582,9 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-profesionales">
+                <div class="actions">
+                    <button id="btn-crear-profesional" class="action-toggle" type="button" data-toggle="crear-profesional">Crear profesional</button>
+                </div>
                 <section class="action-panel" id="crear-profesional">
                     <form method="post" action="" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
@@ -619,7 +622,6 @@ function badgeEstado(string $estado): string
                             <iframe id="detalleProfesionalFrame" title="Detalle del profesional" src="about:blank"></iframe>
                                 <div class="frame-footer">
                                     <p class="frame-label" id="detalleProfesionalTitulo">Detalle del profesional</p>
-                                    <button id="btn-crear-profesional-footer" class="action-toggle" type="button" data-toggle="crear-profesional">Crear profesional</button>
                                 </div>
                         </section>
                 <div class="table-wrap">
@@ -657,11 +659,13 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-pacientes">
+                <div class="actions">
+                    <button id="btn-crear-paciente" class="action-toggle" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente">Crear paciente</button>
+                </div>
                 <section class="detalle-frame-panel" id="detalle-paciente-panel">
                     <iframe id="detallePacienteFrame" title="Detalle del paciente" src="about:blank"></iframe>
                     <div class="frame-footer">
                         <p class="frame-label" id="detalleFrameTitulo">Detalle del paciente</p>
-                        <button id="btn-crear-paciente-footer" class="action-toggle" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente">Crear paciente</button>
                     </div>
                 </section>
 
@@ -721,8 +725,7 @@ function badgeEstado(string $estado): string
             const detailFrame = document.getElementById('detallePacienteFrame');
             const pacientesPanel = document.getElementById('panel-pacientes');
             const detalleFrameTitulo = document.getElementById('detalleFrameTitulo');
-            const crearPacienteFooterBtn = document.getElementById('btn-crear-paciente-footer');
-            const crearProfesionalFooterBtn = document.getElementById('btn-crear-profesional-footer');
+            const crearPacienteBtn = document.getElementById('btn-crear-paciente');
             const profesionalesPanel = document.getElementById('panel-profesionales');
             const profesionalDetailPanel = document.getElementById('detalle-profesional-panel');
             const profesionalDetailFrame = document.getElementById('detalleProfesionalFrame');
@@ -801,15 +804,9 @@ function badgeEstado(string $estado): string
                 setIframePacienteActivo(true);
             }
 
-            if (crearPacienteFooterBtn) {
-                crearPacienteFooterBtn.addEventListener('click', function () {
-                    abrirCreacionPaciente(crearPacienteFooterBtn);
-                });
-            }
-
-            if (crearProfesionalFooterBtn) {
-                crearProfesionalFooterBtn.addEventListener('click', function () {
-                    setDetalleProfesionalActivo(false);
+            if (crearPacienteBtn) {
+                crearPacienteBtn.addEventListener('click', function () {
+                    abrirCreacionPaciente(crearPacienteBtn);
                 });
             }
 
