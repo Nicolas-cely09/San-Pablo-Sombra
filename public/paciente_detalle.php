@@ -289,7 +289,11 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             font: inherit;
             color: var(--text-main);
             background: #fff;
+            transition: border-color .18s ease, box-shadow .18s ease;
         }
+
+        input:focus, select:focus, textarea:focus { border-color: var(--blue-sp); outline: 0; box-shadow: 0 0 0 3px rgba(57, 132, 198, .16); }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 3px; }
 
         textarea { min-height: 80px; resize: vertical; }
 
@@ -357,7 +361,9 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             cursor: pointer;
             background: linear-gradient(135deg, #3984c6, #8b3a8b);
             color: #fff;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(57, 132, 198, .2); filter: saturate(1.08); }
 
         .btn-secondary {
             background: linear-gradient(135deg, #3984c6, #54b4ce);
@@ -381,6 +387,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             .actions { justify-content: stretch; }
             .actions .btn { width: 100%; }
         }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
     </style>
 </head>
 <body>

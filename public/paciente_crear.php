@@ -105,7 +105,11 @@ $tiposDocumentos = PacienteModel::tiposDocumentosPaciente();
             font: inherit;
             color: var(--text-main);
             background: #fff;
+            transition: border-color .18s ease, box-shadow .18s ease;
         }
+
+        input:focus, select:focus, textarea:focus { border-color: var(--blue-sp); outline: 0; box-shadow: 0 0 0 3px rgba(57, 132, 198, .16); }
+        input:required + *, label:has(+ input:required)::after, label:has(+ select:required)::after { content: " *"; color: #b42318; }
 
         textarea { min-height: 78px; resize: vertical; }
 
@@ -119,12 +123,16 @@ $tiposDocumentos = PacienteModel::tiposDocumentosPaciente();
             margin-top: 10px;
             background: linear-gradient(135deg, #3984c6, #8b3a8b);
             color: #fff;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(57, 132, 198, .2); filter: saturate(1.08); }
+        .btn:focus-visible { outline: 3px solid #d91b72; outline-offset: 3px; }
 
         @media (max-width: 900px) {
             body { padding: 10px; }
             .field-grid { grid-template-columns: 1fr; }
         }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
     </style>
 </head>
 <body>
