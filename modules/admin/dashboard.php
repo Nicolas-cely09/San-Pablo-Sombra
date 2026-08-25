@@ -450,7 +450,6 @@ function badgeEstado(string $estado): string
             background: #fff;
             display: block;
         }
-
         .frame-footer {
             border-top: 1px solid #edf2fb;
             padding: 10px 12px;
@@ -466,6 +465,8 @@ function badgeEstado(string $estado): string
             color: #4b6383;
             font-weight: 700;
         }
+
+        .frame-footer .action-toggle { margin: 0; }
 
         table { width: 100%; border-collapse: collapse; min-width: 860px; }
 
@@ -607,7 +608,10 @@ function badgeEstado(string $estado): string
                 <h3 class="table-title">Listado de profesionales</h3>
                         <section class="detalle-frame-panel" id="detalle-profesional-panel">
                             <iframe id="detalleProfesionalFrame" title="Detalle del profesional" src="about:blank"></iframe>
-                            <div class="frame-footer"><p class="frame-label" id="detalleProfesionalTitulo">Detalle del profesional</p></div>
+                                <div class="frame-footer">
+                                    <p class="frame-label" id="detalleProfesionalTitulo">Detalle del profesional</p>
+                                    <button id="btn-crear-profesional-footer" class="action-toggle" type="button" data-toggle="crear-profesional">Crear profesional</button>
+                                </div>
                         </section>
                 <div class="table-wrap">
                     <table>
@@ -665,6 +669,7 @@ function badgeEstado(string $estado): string
                     <iframe id="detallePacienteFrame" title="Detalle del paciente" src="about:blank"></iframe>
                     <div class="frame-footer">
                         <p class="frame-label" id="detalleFrameTitulo">Detalle del paciente</p>
+                        <button id="btn-crear-paciente-footer" class="action-toggle" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente">Crear paciente</button>
                     </div>
                 </section>
 
@@ -744,6 +749,8 @@ function badgeEstado(string $estado): string
             const pacientesPanel = document.getElementById('panel-pacientes');
             const detalleFrameTitulo = document.getElementById('detalleFrameTitulo');
             const crearPacienteBtn = document.getElementById('btn-crear-paciente');
+                        const crearPacienteFooterBtn = document.getElementById('btn-crear-paciente-footer');
+                        const crearProfesionalFooterBtn = document.getElementById('btn-crear-profesional-footer');
             const profesionalesPanel = document.getElementById('panel-profesionales');
             const profesionalDetailPanel = document.getElementById('detalle-profesional-panel');
             const profesionalDetailFrame = document.getElementById('detalleProfesionalFrame');
@@ -808,19 +815,36 @@ function badgeEstado(string $estado): string
             });
 
             if (crearPacienteBtn) {
+            function abrirCreacionPaciente(boton) {
+                const targetUrl = boton.dataset.openIframe || '';
+                const targetTitle = boton.dataset.frameTitle || 'Crear paciente';
+
+                if (detailFrame) {
+                    detailFrame.src = targetUrl;
+                }
+
+                if (detalleFrameTitulo) {
+                    detalleFrameTitulo.textContent = targetTitle;
+                }
+
+                setIframePacienteActivo(true);
+            }
+
+            if (crearPacienteBtn) {
                 crearPacienteBtn.addEventListener('click', function () {
-                    const targetUrl = crearPacienteBtn.dataset.openIframe || '';
-                    const targetTitle = crearPacienteBtn.dataset.frameTitle || 'Crear paciente';
+                    abrirCreacionPaciente(crearPacienteBtn);
+                });
+            }
 
-                    if (detailFrame) {
-                        detailFrame.src = targetUrl;
-                    }
+            if (crearPacienteFooterBtn) {
+                crearPacienteFooterBtn.addEventListener('click', function () {
+                    abrirCreacionPaciente(crearPacienteFooterBtn);
+                });
+            }
 
-                    if (detalleFrameTitulo) {
-                        detalleFrameTitulo.textContent = targetTitle;
-                    }
-
-                    setIframePacienteActivo(true);
+            if (crearProfesionalFooterBtn) {
+                crearProfesionalFooterBtn.addEventListener('click', function () {
+                    setDetalleProfesionalActivo(false);
                 });
             }
 

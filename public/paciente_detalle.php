@@ -405,6 +405,11 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
         .section-panel.active { display: block; }
         .observacion-objetivo { display: none; margin-top: 6px; }
         .observacion-objetivo.visible { display: block; }
+        .objetivos-especificos-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 10px; }
+        .objetivos-especificos-heading h3 { margin: 0; }
+        .btn-add-objective { width: 38px; height: 38px; margin: 0; padding: 0; border-radius: 50%; font-size: 1.45rem; line-height: 1; }
+        .objective-create-form { display: none; margin-bottom: 14px; }
+        .objective-create-form.active { display: block; }
 
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 8px; border-bottom: 1px solid #edf2fb; text-align: left; vertical-align: top; }
@@ -504,15 +509,18 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             <button class="btn" type="submit">Guardar objetivo general</button>
         </form>
 
-        <h3>Objetivos especificos</h3>
-        <form method="post" action="">
+        <div class="objetivos-especificos-heading">
+            <h3>Objetivos especificos</h3>
+            <button class="btn btn-secondary btn-add-objective" type="button" id="btnNuevoObjetivo" aria-label="Añadir objetivo especifico" aria-expanded="false">+</button>
+        </div>
+        <form method="post" action="" class="objective-create-form" id="formNuevoObjetivo">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="accion" value="crear_objetivo_especifico">
             <div class="field-grid">
                 <div class="field full"><label>Descripcion del objetivo</label><textarea name="descripcion_objetivo" required placeholder="Describe el resultado observable que se evaluara"></textarea></div>
                 <div class="field"><label>Frecuencia de evaluacion</label><select name="frecuencia" required><option value="Semanal">Semanal</option><option value="Quincenal">Quincenal</option></select></div>
             </div>
-            <button class="btn btn-secondary" type="submit">Añadir objetivo especifico</button>
+            <button class="btn btn-secondary" type="submit">Guardar objetivo especifico</button>
         </form>
 
         <?php if (count($objetivosEspecificos) === 0): ?>
@@ -616,6 +624,16 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 bitacora: document.getElementById('panelBitacora')
             };
             const botonDocumentos = document.querySelector('[data-section="documentos"]');
+            const btnNuevoObjetivo = document.getElementById('btnNuevoObjetivo');
+            const formNuevoObjetivo = document.getElementById('formNuevoObjetivo');
+
+            if (btnNuevoObjetivo && formNuevoObjetivo) {
+                btnNuevoObjetivo.addEventListener('click', function () {
+                    const abierto = formNuevoObjetivo.classList.toggle('active');
+                    btnNuevoObjetivo.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                    btnNuevoObjetivo.textContent = abierto ? '−' : '+';
+                });
+            }
 
             function mostrarSeccion(nombre, actualizarBoton = true) {
                 document.body.classList.toggle('section-open', Boolean(nombre));
