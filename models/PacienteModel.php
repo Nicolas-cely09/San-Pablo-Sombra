@@ -209,6 +209,20 @@ final class PacienteModel
         ]);
     }
 
+    public function eliminar(int $id): void
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Paciente no valido.');
+        }
+
+        $stmt = $this->db->prepare('DELETE FROM pacientes WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new RuntimeException('No se encontro el paciente para eliminar.');
+        }
+    }
+
     public function listarActivos(): array
     {
         $this->asegurarEstructura();

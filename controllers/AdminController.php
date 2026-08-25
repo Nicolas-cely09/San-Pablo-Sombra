@@ -122,6 +122,16 @@ final class AdminController
         ]);
     }
 
+    public function eliminarProfesional(array $input): void
+    {
+        $this->userModel->eliminarProfesional((int) ($input['id'] ?? 0));
+    }
+
+    public function eliminarPaciente(array $input): void
+    {
+        $this->pacienteModel->eliminar((int) ($input['id'] ?? 0));
+    }
+
     public function crearPaciente(array $input, array $files = []): void
     {
         $documentoIdentidad = trim($input['documento_identidad'] ?? '');
