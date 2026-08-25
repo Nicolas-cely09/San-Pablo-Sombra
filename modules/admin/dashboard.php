@@ -408,6 +408,10 @@ function badgeEstado(string $estado): string
             color: #24486f;
         }
 
+        .table-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+        .table-title-row .table-title { margin: 0; }
+        .table-title-row .add-button { flex: 0 0 auto; }
+
         .table-wrap {
             border: 1px solid #e5edf7;
             border-radius: 10px;
@@ -617,7 +621,10 @@ function badgeEstado(string $estado): string
                     </form>
                 </section>
 
-                <h3 class="table-title">Listado de profesionales</h3>
+                <div class="table-title-row">
+                    <h3 class="table-title">Listado de profesionales</h3>
+                    <button id="btn-crear-profesional" class="add-button" type="button" data-toggle="crear-profesional" title="Crear profesional" aria-label="Crear profesional">+</button>
+                </div>
                         <section class="detalle-frame-panel" id="detalle-profesional-panel">
                             <iframe id="detalleProfesionalFrame" title="Detalle del profesional" src="about:blank"></iframe>
                                 <div class="frame-footer">
@@ -634,7 +641,7 @@ function badgeEstado(string $estado): string
                                 <th>Telefono</th>
                                 <th>Estado</th>
                                 <th>Detalle</th>
-                                <th><button id="btn-crear-profesional" class="add-button" type="button" data-toggle="crear-profesional" title="Crear profesional" aria-label="Crear profesional">+</button></th>
+                                <th>Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -666,7 +673,10 @@ function badgeEstado(string $estado): string
                     </div>
                 </section>
 
-                <h3 class="table-title">Listado de pacientes</h3>
+                <div class="table-title-row">
+                    <h3 class="table-title">Listado de pacientes</h3>
+                    <button id="btn-crear-paciente" class="add-button" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente" title="Crear paciente" aria-label="Crear paciente">+</button>
+                </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -680,7 +690,7 @@ function badgeEstado(string $estado): string
                                 <th>Estado</th>
                                 <th>Profesional</th>
                                 <th>Detalle</th>
-                                <th><button id="btn-crear-paciente" class="add-button" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente" title="Crear paciente" aria-label="Crear paciente">+</button></th>
+                                <th>Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
