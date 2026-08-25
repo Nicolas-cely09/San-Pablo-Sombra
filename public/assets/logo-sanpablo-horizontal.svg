@@ -1,0 +1,13 @@
+<svg width="360" height="84" viewBox="0 0 360 84" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo San Pablo</title>
+  <desc id="desc">Isotipo de tres nubes con texto San Pablo</desc>
+  <rect x="1" y="1" width="358" height="82" rx="41" fill="#FFFFFF" stroke="#E8EEF7"/>
+
+  <g transform="translate(24,18)">
+    <circle cx="24" cy="24" r="20" fill="#E21B79"/>
+    <circle cx="38" cy="16" r="20" fill="#8B3A8B"/>
+    <circle cx="44" cy="30" r="20" fill="#A3D133"/>
+  </g>
+
+  <text x="96" y="51" fill="#3984C6" font-family="Manrope, Segoe UI, Arial, sans-serif" font-weight="800" font-size="50" letter-spacing="0.5">San Pablo</text>
+</svg>

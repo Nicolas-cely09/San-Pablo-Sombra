@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación del Proyecto - Centro Terapéutico San Pablo</title>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --text-color: #1f2937;
+            --bg-light: #f8fafc;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: var(--primary-color);
+            margin-top: 20px;
+        }
+
+        .meta-info {
+            background-color: #eff6ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .meta-info p {
+            margin: 4px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        ul, ol {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        pre {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .hu-box {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .hu-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Documentación Técnica y Funcional del Proyecto</h1>
+
+    <div class="meta-info">
+        <p><strong>Proyecto:</strong> Sistema de Gestión de Acompañamiento Terapéutico</p>
+        <p><strong>Cliente / Entidad:</strong> Centro Terapéutico San Pablo</p>
+        <p><strong>Objetivo:</strong> Automatizar la gestión de pacientes, asignación de profesionales sombra y registro de bitácoras e historias clínicas.</p>
+    </div>
+
+    <h2>1. Visión General y Roles del Sistema</h2>
+    <p>El sistema implementa un control de acceso basado en roles (<strong>RBAC</strong>):</p>
+    <ul>
+        <li><strong>Administrador (Rol 1):</strong> Encargado de gestionar usuarios, crear fichas de pacientes, asignar profesionales sombra a pacientes específicos y supervisar las bitácoras registradas.</li>
+        <li><strong>Profesional Sombra (Rol 2):</strong> Encargado de consultar los pacientes que tiene asignados y diligenciar los reportes diarios de evolución (historias clínicas / bitácoras) al finalizar cada sesión.</li>
+    </ul>
+
+    <h2>2. Requerimientos del Sistema</h2>
+    
+    <h3>Requerimientos Funcionales (RF)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Módulo</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>RF-01</strong></td>
+                <td>Autenticación</td>
+                <td>El sistema debe permitir el inicio de sesión a usuarios activos mediante su <code>documento_identidad</code> y contraseña, redirigiéndolos a su módulo según <code>rol_id</code>.</td>
+            </tr>
+            <tr>
+                <td><strong>RF-02</strong></td>
+                <td>Gestión de Pacientes</td>
+                <td>El Administrador debe registrar, actualizar y consultar los datos demográficos y de acudientes de los pacientes.</td>
+            </tr>
+            <tr>
+                <td><strong>RF-03</strong></td>
+                <td>Asignación de Plan Sombra</td>
+                <td>El Administrador debe poder vincular a un Profesional Sombra con un Paciente, registrando la fecha de inicio, fecha fin estimada y los objetivos del plan.</td>
+            </tr>
+            <tr>
+                <td><strong>RF-04</strong></td>
+                <td>Registro de Bitácoras</td>
+                <td>El Profesional Sombra debe diligenciar la bitácora diaria de acompañamiento indicando resumen de la jornada, conductas observadas y alertas.</td>
+            </tr>
+            <tr>
+                <td><strong>RF-05</strong></td>
+                <td>Control e Historial</td>
+                <td>El Administrador y el Profesional Sombra (solo para sus pacientes asignados) deben poder consultar el historial acumulado de reportes diarios.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Requerimientos No Funcionales (RNF)</h3>
+    <ul>
+        <li><strong>RNF-01 (Seguridad & RBAC):</strong> Restricción de acceso a nivel de backend para evitar que un profesional consulte información de pacientes no asignados a su perfil.</li>
+        <li><strong>RNF-02 (Arquitectura Modular):</strong> Separación clara entre el punto de entrada público (<code>public/</code>), la lógica de negocio (<code>controllers/</code>), las reglas de datos (<code>models/</code>) y las vistas (<code>modules/</code>).</li>
+        <li><strong>RNF-03 (Usabilidad Móvil):</strong> La interfaz para el registro de bitácoras debe ser fluida para permitir el diligenciamiento desde tablets o dispositivos móviles en campo.</li>
+    </ul>
+
+    <h2>3. Historias de Usuario (HU)</h2>
+
+    <div class="hu-box">
+        <div class="hu-title">HU-01: Autenticación por Documento de Identidad</div>
+        <p><strong>Como:</strong> Usuario del sistema (Admin / Profesional).</p>
+        <p><strong>Quiero:</strong> Iniciar sesión ingresando mi número de documento y contraseña.</p>
+        <p><strong>Para:</strong> Acceder al panel correspondiente a mis permisos.</p>
+        <p><strong>Criterios de Aceptación:</strong></p>
+        <ul>
+            <li>Validar credenciales contra la tabla <code>usuarios</code> usando <code>documento_identidad</code>.</li>
+            <li>Permitir el acceso únicamente si <code>estado = 'activo'</code>.</li>
+            <li>Guardar los datos del usuario en sesión (<code>id</code>, <code>nombre</code>, <code>rol_id</code>).</li>
+        </ul>
+    </div>
+
+    <div class="hu-box">
+        <div class="hu-title">HU-02: Asignación de Profesional a Paciente</div>
+        <p><strong>Como:</strong> Administrador del Centro San Pablo.</p>
+        <p><strong>Quiero:</strong> Crear una asignación vinculando un <code>paciente_id</code> con un <code>profesional_id</code> y definiendo los objetivos del acompañamiento.</p>
+        <p><strong>Para:</strong> Establecer formalmente el inicio del servicio del profesional sombra.</p>
+        <p><strong>Criterios de Aceptación:</strong></p>
+        <ul>
+            <li>Desplegar solo profesionales activos (<code>rol_id = 2</code>) y pacientes en estado <code>'activo'</code>.</li>
+            <li>Registrar el estado inicial de la asignación como <code>'activo'</code>.</li>
+        </ul>
+    </div>
+
+    <div class="hu-box">
+        <div class="hu-title">HU-03: Diligenciamiento de Bitácora / Reporte Diario</div>
+        <p><strong>Como:</strong> Profesional Sombra.</p>
+        <p><strong>Quiero:</strong> Registrar la información diaria del acompañamiento terapéutico realizado a mi paciente asignado.</p>
+        <p><strong>Para:</strong> Dejar evidencia del proceso de avance y novedades observadas.</p>
+        <p><strong>Criterios de Aceptación:</strong></p>
+        <ul>
+            <li>El profesional solo ve las asignaciones activas vinculadas a su <code>id</code>.</li>
+            <li>El campo <code>resumen_jornada</code> es obligatorio.</li>
+            <li>La fecha y hora (<code>fecha_registro</code>) se asignan automáticamente al guardar.</li>
+        </ul>
+    </div>
+
+    <h2>4. Estructura de la Base de Datos (`sanpablo_bd`)</h2>
+<pre><code>CREATE DATABASE IF NOT EXISTS sanpablo_bd;
+USE sanpablo_bd;
+
+-- 1. Tablas Core: Roles y Usuarios
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rol_id INT NOT NULL,
+    documento_identidad VARCHAR(30) UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    telefono VARCHAR(20),
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 2. Pacientes
+CREATE TABLE IF NOT EXISTS pacientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    documento_identidad VARCHAR(30) UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    fecha_nacimiento DATE NOT NULL,
+    nombre_acudiente VARCHAR(150),
+    contacto_acudiente VARCHAR(50),
+    observaciones_iniciales TEXT,
+    estado ENUM('activo', 'inactivo', 'finalizado') DEFAULT 'activo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- 3. Asignaciones (Relación Profesional - Paciente)
+CREATE TABLE IF NOT EXISTS asignaciones_plan_sombra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    paciente_id INT NOT NULL,
+    profesional_id INT NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NULL,
+    estado ENUM('activo', 'pausado', 'finalizado') DEFAULT 'activo',
+    objetivos_plan TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (profesional_id) REFERENCES usuarios(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 4. Historias Clínicas / Reportes Diarios
+CREATE TABLE IF NOT EXISTS historias_clinicas_reportes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asignacion_id INT NOT NULL,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resumen_jornada TEXT NOT NULL,
+    comportamiento_observado TEXT,
+    novedades_alertas TEXT,
+    FOREIGN KEY (asignacion_id) REFERENCES asignaciones_plan_sombra(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;</code></pre>
+
+    <h2>5. Arquitectura del Código y Estructura de Carpetas</h2>
+<pre><code>- BD/
+  - init.sql
+  - seeds/seed_inicial.sql
+- config/
+  - config.php          # Credenciales y variables globales
+  - conexion.php        # Conexión PDO / MySQL
+- core/
+  - auth.php            # Verificación de sesión y roles (RBAC)
+  - helpers.php         # Funciones auxiliares
+- controllers/
+  - AuthController.php  # Lógica de login/logout
+  - AdminController.php # Lógica del panel administrativo
+  - ProfesionalController.php # Lógica de la vista de profesionales
+- models/
+  - UserModel.php       # Consultas a la tabla 'usuarios'
+  - PacienteModel.php    # Consultas a la tabla 'pacientes'
+- modules/              # Vistas protegidas
+  - admin/dashboard.php
+  - profesional/dashboard.php
+- public/               # Raíz pública del servidor web
+  - index.php
+  - login.php
+  - dashboard.php
+  - logout.php
+- bootstrap.php         # Carga inicial de dependencias</code></pre>
+
+    <h2>6. Credenciales</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rol</th>
+                <th>Documento</th>
+                <th>Contraseña</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Administrador</td>
+                <td><code>1069769579</code></td>
+                <td><code>123456789</code></td>
+            </tr>
+            <tr>
+                <td>Profesional Sombra</td>
+                <td><code>1069732158</code></td>
+                <td><code>123456789</code></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

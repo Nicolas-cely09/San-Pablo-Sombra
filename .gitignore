@@ -1,0 +1,22 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+config/*.local.php
+
+# Runtime uploads and generated files
+public/uploads/*
+!public/uploads/pacientes/
+public/uploads/pacientes/*
+!public/uploads/pacientes/.gitkeep
+
+# Local development files
+.vscode/
+*.log
+*.tmp
+*.swp
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
