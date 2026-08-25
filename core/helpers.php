@@ -246,6 +246,15 @@ function renderIframeNavButtons(): string
         box-shadow: 0 14px 26px rgba(27, 49, 83, 0.36);
     }
 
+    .sp-iframe-nav-btn:focus-visible {
+        outline: 3px solid #d91b72;
+        outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sp-iframe-nav-btn { transition: none; }
+    }
+
     .sp-iframe-nav-back {
         background: linear-gradient(135deg, #3b86c8, #57b7cf);
     }
