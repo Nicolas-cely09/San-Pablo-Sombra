@@ -27,6 +27,14 @@ if (!$paciente) {
 $informes = $asignacionModel->listarPorPaciente($pacienteId);
 $totalBitacoras = count($informes);
 $ultimaBitacora = $informes[0]['fecha_registro'] ?? null;
+$bitacoraSeleccionadaId = (int) ($_GET['bitacora'] ?? 0);
+$bitacoraSeleccionada = null;
+foreach ($informes as $informe) {
+    if ((int) $informe['id'] === $bitacoraSeleccionadaId) {
+        $bitacoraSeleccionada = $informe;
+        break;
+    }
+}
 ?>
 <!doctype html>
 <html lang="es">
@@ -145,6 +153,23 @@ $ultimaBitacora = $informes[0]['fecha_registro'] ?? null;
             line-height: 1.4;
         }
 
+        .bitacora-resumen {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .bitacora-resumen h3,
+        .bitacora-resumen p { margin: 0; }
+
+        .bitacora-resumen h3 { color: #24486f; font-size: 1rem; }
+        .bitacora-resumen p { color: var(--text-soft); font-size: .9rem; }
+        .btn-link { text-decoration: none; white-space: nowrap; }
+
+        .detail-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .detail-heading h2 { margin: 0; }
+
         .actions {
             display: flex;
             justify-content: flex-end;
@@ -159,11 +184,14 @@ $ultimaBitacora = $informes[0]['fecha_registro'] ?? null;
             cursor: pointer;
             background: linear-gradient(135deg, #3984c6, #8b3a8b);
             color: #fff;
+            text-decoration: none;
         }
 
         @media (max-width: 900px) {
             body { padding: 10px; }
             .summary-grid { grid-template-columns: 1fr; }
+            .bitacora-resumen { grid-template-columns: 1fr; gap: 8px; }
+            .bitacora-resumen .btn { width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -188,29 +216,47 @@ $ultimaBitacora = $informes[0]['fecha_registro'] ?? null;
         </div>
     </div>
 
+    <?php if ($bitacoraSeleccionada !== null): ?>
+    <div class="card">
+        <div class="detail-heading">
+            <h2>Bitácora #<?= e((string) $bitacoraSeleccionada['id']) ?></h2>
+            <a class="btn" href="/Sanpablo/public/paciente_informe.php?id=<?= e((string) $pacienteId) ?>">Volver al listado</a>
+        </div>
+        <p><strong>Fecha:</strong> <?= e((string) ($bitacoraSeleccionada['fecha_bitacora'] ?: $bitacoraSeleccionada['fecha_registro'])) ?></p>
+        <div class="bitacora-grid">
+            <p><strong>Nombre del estudiante:</strong> <?= e($paciente['nombre'] . ' ' . $paciente['apellido']) ?></p>
+            <p><strong>Grado:</strong> <?= e((string) ($bitacoraSeleccionada['grado'] ?? '-')) ?></p>
+            <p><strong>Profesional:</strong> <?= e((string) $bitacoraSeleccionada['profesional_nombre']) ?></p>
+            <p><strong>Actividad realizada:</strong> <?= e((string) $bitacoraSeleccionada['resumen_jornada']) ?></p>
+            <p><strong>Nivel de participación:</strong> <?= e((string) ($bitacoraSeleccionada['nivel_participacion'] ?: '-')) ?></p>
+            <p><strong>Descripción de la participación:</strong> <?= e((string) ($bitacoraSeleccionada['descripcion_participacion'] ?: $bitacoraSeleccionada['comportamiento_observado'])) ?></p>
+            <p><strong>Apoyos brindados:</strong> <?= e((string) ($bitacoraSeleccionada['apoyos_brindados'] ?: $bitacoraSeleccionada['manejo_brindado'])) ?></p>
+            <p><strong>Avances de logros estipulados:</strong> <?= e((string) ($bitacoraSeleccionada['avances_logros'] ?? '-')) ?></p>
+            <p><strong>Dificultades observadas:</strong> <?= e((string) ($bitacoraSeleccionada['dificultades_observadas'] ?: $bitacoraSeleccionada['novedades_alertas'])) ?></p>
+            <p><strong>Observaciones:</strong> <?= e((string) ($bitacoraSeleccionada['observaciones'] ?? '-')) ?></p>
+            <p><strong>Firma digital:</strong> <?= e((string) ($bitacoraSeleccionada['firma_digital'] ?? '-')) ?></p>
+        </div>
+    </div>
+    <?php else: ?>
     <div class="card">
         <h2>Bitácoras consecutivas</h2>
         <?php if ($totalBitacoras === 0): ?>
             <p>No hay bitácoras registradas para este paciente.</p>
         <?php else: ?>
             <div class="timeline">
-                <?php foreach ($informes as $index => $informe): ?>
+                <?php foreach ($informes as $informe): ?>
                     <article class="bitacora-item">
-                        <div class="bitacora-meta">
-                            <h3>Registro <?= e((string) ($index + 1)) ?></h3>
-                            <span class="pill"><?= e((string) $informe['fecha_registro']) ?></span>
-                        </div>
-                        <div class="bitacora-grid">
-                            <p><strong>Profesional:</strong> <?= e((string) $informe['profesional_nombre']) ?></p>
-                            <p><strong>Actividad diaria:</strong> <?= e((string) $informe['resumen_jornada']) ?></p>
-                            <p><strong>Comportamiento:</strong> <?= e((string) $informe['comportamiento_observado']) ?></p>
-                            <p><strong>Manejo brindado:</strong> <?= e((string) $informe['manejo_brindado']) ?></p>
+                        <div class="bitacora-resumen">
+                            <h3>Bitácora #<?= e((string) $informe['id']) ?></h3>
+                            <p><?= e((string) ($informe['fecha_bitacora'] ?: $informe['fecha_registro'])) ?></p>
+                            <a class="btn btn-link" href="/Sanpablo/public/paciente_informe.php?id=<?= e((string) $pacienteId) ?>&amp;bitacora=<?= e((string) $informe['id']) ?>">Ver detalle</a>
                         </div>
                     </article>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <div class="card actions">
         <button class="btn" type="button" onclick="window.location.href='/Sanpablo/public/paciente_detalle.php?id=<?= e((string) $pacienteId) ?>'">Volver al detalle</button>

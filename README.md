@@ -34,9 +34,10 @@
 
 1. Crea la base de datos ejecutando BD/init.sql.
 2. Si tu base ya existia desde antes, ejecuta BD/migrations/001_add_documento_identidad_usuarios.sql.
-3. Ejecuta BD/seeds/seed_inicial.sql para cargar roles, administrador, profesional y paciente de prueba.
-4. Ajusta credenciales de base de datos en config/config.php si aplica.
-5. Abre en navegador: /Sanpablo/public/login.php
+3. Ejecuta las migraciones restantes de BD/migrations en orden, incluida 004_add_campos_bitacora_diaria.sql.
+4. Ejecuta BD/seeds/seed_inicial.sql para cargar roles, administrador, profesional y paciente de prueba.
+5. Ajusta credenciales de base de datos en config/config.php si aplica.
+6. Abre en navegador: /Sanpablo/public/login.php
 
 ## Credenciales iniciales
 

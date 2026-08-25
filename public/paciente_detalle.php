@@ -95,6 +95,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('No tienes permisos para registrar bitacoras.');
             }
 
+                $camposBitacora = [
+                    'fecha_bitacora' => 'fecha',
+                    'grado' => 'grado',
+                    'actividad_realizada' => 'actividad realizada',
+                    'nivel_participacion' => 'nivel de participacion',
+                    'descripcion_participacion' => 'descripcion de la participacion',
+                    'apoyos_brindados' => 'apoyos brindados',
+                    'avances_logros' => 'avances de logros estipulados',
+                    'dificultades_observadas' => 'dificultades observadas',
+                ];
+                foreach ($camposBitacora as $campo => $nombreCampo) {
+                    if (trim((string) ($_POST[$campo] ?? '')) === '') {
+                        throw new InvalidArgumentException('Completa el campo: ' . $nombreCampo . '.');
+                    }
+                }
+                if (!in_array((string) $_POST['nivel_participacion'], ['Alta', 'Media', 'Baja'], true)) {
+                    throw new InvalidArgumentException('Selecciona un nivel de participacion valido.');
+                }
+
             $asignacion = $asignacionModel->obtenerAsignacionPorPacienteYProfesional($pacienteId, $usuarioId);
             if ($asignacion === null) {
                 throw new RuntimeException('No se encontro una asignacion valida para este paciente.');
@@ -102,10 +121,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $asignacionModel->crearInforme($usuarioId, [
                 'asignacion_id' => (int) $asignacion['id'],
-                'resumen_jornada' => trim((string) ($_POST['resumen_jornada'] ?? '')),
-                'comportamiento_observado' => trim((string) ($_POST['comportamiento_observado'] ?? '')),
-                'novedades_alertas' => trim((string) ($_POST['novedades_alertas'] ?? '')),
-                'manejo_brindado' => trim((string) ($_POST['manejo_brindado'] ?? '')),
+                'fecha_bitacora' => trim((string) ($_POST['fecha_bitacora'] ?? date('Y-m-d'))),
+                'grado' => trim((string) ($_POST['grado'] ?? '')),
+                'resumen_jornada' => trim((string) ($_POST['actividad_realizada'] ?? '')),
+                'nivel_participacion' => trim((string) ($_POST['nivel_participacion'] ?? '')),
+                'descripcion_participacion' => trim((string) ($_POST['descripcion_participacion'] ?? '')),
+                'apoyos_brindados' => trim((string) ($_POST['apoyos_brindados'] ?? '')),
+                'avances_logros' => trim((string) ($_POST['avances_logros'] ?? '')),
+                'dificultades_observadas' => trim((string) ($_POST['dificultades_observadas'] ?? '')),
+                'observaciones' => trim((string) ($_POST['observaciones'] ?? '')),
+                'firma_digital' => trim((string) ($_POST['firma_digital'] ?? '')),
+                'comportamiento_observado' => trim((string) ($_POST['descripcion_participacion'] ?? '')),
+                'novedades_alertas' => trim((string) ($_POST['dificultades_observadas'] ?? '')),
+                'manejo_brindado' => trim((string) ($_POST['apoyos_brindados'] ?? '')),
             ]);
 
             flash('ok', 'Bitacora registrada correctamente.');
@@ -237,6 +265,10 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             box-shadow: var(--shadow);
             margin-bottom: 10px;
         }
+
+        .patient-summary h1 { margin-bottom: 12px; }
+        body.section-open .patient-summary .info-layout { display: none; }
+        body.section-open .patient-summary { margin-bottom: 10px; }
 
         h1, h2 { margin-top: 0; color: #24486f; }
         h1 { margin-bottom: 12px; font-size: clamp(1.45rem, 2.4vw, 2rem); }
@@ -393,7 +425,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 <body>
     <?= renderToastFlash($flash) ?>
 
-    <div class="card">
+    <div class="card patient-summary">
         <h1><?= e($paciente['nombre'] . ' ' . $paciente['apellido']) ?></h1>
         <div class="info-layout">
             <div class="foto-wrap">
@@ -522,21 +554,37 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                 <input type="hidden" name="accion" value="crear_informe">
                 <div class="field-grid">
+                    <div class="field"><label>Nombre del estudiante</label><input type="text" value="<?= e($paciente['nombre'] . ' ' . $paciente['apellido']) ?>" readonly></div>
+                    <div class="field"><label>Grado</label><input type="text" name="grado" maxlength="100" required></div>
+                    <div class="field"><label>Fecha</label><input type="date" name="fecha_bitacora" value="<?= e(date('Y-m-d')) ?>" required></div>
+                    <div class="field"><label>Nivel de participación</label><select name="nivel_participacion" required><option value="">Selecciona un nivel...</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></div>
                     <div class="field full">
-                        <label>Actividad diaria</label>
-                        <textarea name="resumen_jornada" required placeholder="Describe la actividad desarrollada durante la jornada"></textarea>
+                        <label>Actividad realizada</label>
+                        <textarea name="actividad_realizada" maxlength="250" required placeholder="Describe la actividad realizada"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Comportamiento del paciente</label>
-                        <textarea name="comportamiento_observado" placeholder="Observa comportamientos, logros o crisis del dia"></textarea>
+                        <label>Descripción de la participación</label>
+                        <textarea name="descripcion_participacion" maxlength="250" required placeholder="Describe la participación del estudiante"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Novedades o alertas</label>
-                        <textarea name="novedades_alertas" placeholder="Registra novedades relevantes de la jornada"></textarea>
+                        <label>Apoyos brindados</label>
+                        <textarea name="apoyos_brindados" maxlength="250" required placeholder="Describe los apoyos brindados"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Manejo brindado</label>
-                        <textarea name="manejo_brindado" placeholder="Describe el manejo aplicado en caso de crisis o mal comportamiento"></textarea>
+                        <label>Avances de logros estipulados</label>
+                        <textarea name="avances_logros" maxlength="250" required placeholder="Describe los avances observados"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Dificultades observadas</label>
+                        <textarea name="dificultades_observadas" maxlength="250" required placeholder="Describe las dificultades observadas"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Observaciones</label>
+                        <textarea name="observaciones" maxlength="250" placeholder="Registra observaciones adicionales"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Firma digital</label>
+                        <input type="text" name="firma_digital" maxlength="255" placeholder="Nombre del profesional o referencia de firma">
                     </div>
                 </div>
                 <button class="btn" type="submit">Guardar bitácora</button>
@@ -570,6 +618,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const botonDocumentos = document.querySelector('[data-section="documentos"]');
 
             function mostrarSeccion(nombre, actualizarBoton = true) {
+                document.body.classList.toggle('section-open', Boolean(nombre));
                 Object.keys(paneles).forEach((clave) => {
                     const panel = paneles[clave];
                     if (!panel) {

@@ -436,8 +436,11 @@ function badgeEstado(string $estado): string
         #panel-pacientes.iframe-activo .table-wrap { display: none !important; }
 
         #panel-profesionales.detalle-activo .actions,
+        #panel-profesionales.detalle-activo .action-panel,
         #panel-profesionales.detalle-activo .table-title,
         #panel-profesionales.detalle-activo .table-wrap { display: none !important; }
+
+        #panel-profesionales.detalle-activo > .detalle-frame-panel { margin-top: 0; }
 
         .detalle-frame-panel iframe {
             width: 100%;
