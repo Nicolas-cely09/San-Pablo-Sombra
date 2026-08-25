@@ -48,26 +48,28 @@ $csrfToken = generarTokenCsrf();
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
 
-        :root {
-            --blue-sp: #3984c6;
-            --violet-sp: #8b3a8b;
-            --magenta-sp: #e21b79;
-            --lime-sp: #a3d133;
-        }
-
-        body { font-family: "Manrope", "Segoe UI", sans-serif; background: linear-gradient(145deg, #f4f7fb, #e9eff7); margin: 0; }
+        :root { --brand: #2877b2; --brand-dark: #1d4f78; --accent: #d91b72; --ink: #172b3a; --muted: #526579; --line: #d6e0e8; --page: #f4f7fa; }
+        * { box-sizing: border-box; }
+        body { min-height: 100vh; margin: 0; color: var(--ink); font-family: "Manrope", "Segoe UI", sans-serif; background: radial-gradient(circle at 12% 10%, rgba(217,27,114,.12), transparent 30%), linear-gradient(140deg, #eef5f8, var(--page)); }
         .wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
-        .card { width: 100%; max-width: 460px; background: rgba(255,255,255,.92); border: 1px solid #e2e9f2; border-radius: 16px; padding: 24px; box-shadow: 0 14px 34px rgba(30, 54, 88, .12); }
-        .brand-pill { border-radius: 999px; border: 1px solid #ecf1f7; padding: 10px 14px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 18px rgba(54, 72, 97, 0.08); margin-bottom: 8px; background: #fff; }
-        .brand-logo { width: 100%; max-width: 260px; height: auto; display: block; }
-        .subtitle { text-align: center; margin: 6px 0 18px; font-size: 11px; color: #222222; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; }
-        .card-title { margin: 0 0 4px; color: #24486f; text-align: center; }
-        .card-subtitle { margin: 0 0 14px; color: #61708a; font-size: 13px; text-align: center; }
-        label { display: block; margin: 10px 0 6px; color: #243b53; font-size: 14px; }
-        input { width: 100%; padding: 10px; border: 1px solid #bcccdc; border-radius: 8px; box-sizing: border-box; }
-        button { margin-top: 16px; width: 100%; border: 0; border-radius: 8px; padding: 12px; background: var(--blue-sp); color: #fff; font-weight: 700; cursor: pointer; }
-        .error { background: #ffe3e3; color: #9b2226; border: 1px solid #ffc9c9; padding: 10px; border-radius: 8px; margin-bottom: 12px; }
-        .hint { font-size: 13px; color: #486581; margin-top: 12px; }
+        .card { width: 100%; max-width: 440px; padding: 34px; background: rgba(255,255,255,.94); border: 1px solid rgba(214,224,232,.9); border-radius: 14px; box-shadow: 0 24px 60px rgba(29,79,120,.14); }
+        .brand-mark { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 26px; color: var(--brand-dark); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .brand-mark::before { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); content: ""; }
+        .brand-logo { display: block; width: min(100%, 250px); height: auto; margin-bottom: 12px; }
+        .subtitle { margin: 0 0 28px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        .card-title { margin: 0 0 7px; color: var(--brand-dark); font-size: 1.7rem; letter-spacing: 0; }
+        .card-subtitle { margin: 0 0 22px; color: var(--muted); font-size: .9rem; }
+        label { display: block; margin: 16px 0 7px; color: var(--ink); font-size: .84rem; font-weight: 800; }
+        input { width: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; font: inherit; transition: border-color .18s, box-shadow .18s; }
+        input:focus { border-color: var(--brand); outline: 0; box-shadow: 0 0 0 3px rgba(40,119,178,.18); }
+        button { width: 100%; margin-top: 24px; padding: 13px 16px; border: 0; border-radius: 8px; background: var(--brand); color: #fff; font: inherit; font-weight: 800; cursor: pointer; transition: background .18s, transform .18s; }
+        button:hover { background: var(--brand-dark); transform: translateY(-1px); }
+        button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .error { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 14px; padding: 12px 13px; border: 1px solid #f2b8b5; border-radius: 8px; background: #fff1f0; color: #8e211b; font-size: .88rem; line-height: 1.4; }
+        .error::before { content: "!"; display: grid; place-items: center; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; background: #b42318; color: #fff; font-size: .75rem; font-weight: 800; }
+        .hint { margin: 18px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+        @media (max-width: 520px) { .wrap { padding: 14px; } .card { padding: 24px 20px; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
     </style>
 </head>
 <body>

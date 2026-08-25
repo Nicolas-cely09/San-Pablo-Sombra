@@ -60,10 +60,15 @@ function renderToastFlash(?array $flash): string
     $tipo = (string) ($flash['tipo'] ?? 'ok');
     $mensaje = e((string) ($flash['mensaje'] ?? ''));
     $toastClass = $tipo === 'ok' ? 'toast-success' : 'toast-error';
+    $toastIcon = $tipo === 'ok' ? '&#10003;' : '!';
 
     return <<<HTML
 <div class="sp-toast-wrap" id="spToastWrap" role="status" aria-live="polite">
-    <div class="sp-toast {$toastClass}" id="spToastMessage">{$mensaje}</div>
+    <div class="sp-toast {$toastClass}" id="spToastMessage">
+        <span class="sp-toast-icon" aria-hidden="true">{$toastIcon}</span>
+        <span class="sp-toast-copy">{$mensaje}</span>
+        <button class="sp-toast-close" id="spToastClose" type="button" aria-label="Cerrar notificacion">&times;</button>
+    </div>
 </div>
 <style>
     .sp-toast-wrap {
@@ -75,19 +80,54 @@ function renderToastFlash(?array $flash): string
     }
 
     .sp-toast {
-        min-width: 250px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-width: 280px;
         max-width: min(92vw, 420px);
-        padding: 11px 14px;
-        border-radius: 10px;
+        padding: 13px 12px 13px 14px;
+        border-radius: 12px;
         border: 1px solid transparent;
         box-shadow: 0 12px 28px rgba(23, 40, 65, 0.2);
         font-family: "Manrope", "Segoe UI", sans-serif;
         font-weight: 700;
-        font-size: 0.92rem;
+        font-size: 0.9rem;
         line-height: 1.35;
         transform: translateX(115%);
         opacity: 0;
     }
+
+    .sp-toast-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 22px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .toast-success .sp-toast-icon { background: #287a45; }
+    .toast-error .sp-toast-icon { background: #b42318; }
+    .sp-toast-copy { flex: 1; }
+    .sp-toast-close {
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+        margin: -3px -2px 0 0;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: currentColor;
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+    .sp-toast-close:hover { background: rgba(23, 43, 58, 0.1); }
+    .sp-toast-close:focus-visible { outline: 3px solid #172b3a; outline-offset: 2px; }
 
     .sp-toast.toast-success {
         background: #e6f9d7;
@@ -135,9 +175,24 @@ function renderToastFlash(?array $flash): string
     (function () {
         var toast = document.getElementById('spToastMessage');
         var wrap = document.getElementById('spToastWrap');
+        var close = document.getElementById('spToastClose');
 
         if (!toast || !wrap) {
             return;
+        }
+
+        function dismiss() {
+            toast.classList.remove('sp-toast-in');
+            toast.classList.add('sp-toast-out');
+            setTimeout(function () {
+                if (wrap.parentNode) {
+                    wrap.parentNode.removeChild(wrap);
+                }
+            }, 280);
+        }
+
+        if (close) {
+            close.addEventListener('click', dismiss);
         }
 
         requestAnimationFrame(function () {
@@ -145,15 +200,8 @@ function renderToastFlash(?array $flash): string
         });
 
         setTimeout(function () {
-            toast.classList.remove('sp-toast-in');
-            toast.classList.add('sp-toast-out');
-        }, 3400);
-
-        setTimeout(function () {
-            if (wrap.parentNode) {
-                wrap.parentNode.removeChild(wrap);
-            }
-        }, 3800);
+            dismiss();
+        }, 5000);
     })();
 </script>
 HTML;
