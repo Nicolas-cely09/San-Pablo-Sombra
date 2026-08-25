@@ -814,7 +814,6 @@ function badgeEstado(string $estado): string
                 });
             });
 
-            if (crearPacienteBtn) {
             function abrirCreacionPaciente(boton) {
                 const targetUrl = boton.dataset.openIframe || '';
                 const targetTitle = boton.dataset.frameTitle || 'Crear paciente';
