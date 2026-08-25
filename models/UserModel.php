@@ -8,6 +8,21 @@ final class UserModel
     private const ROL_PROFESIONAL_SOMBRA_ID = 2;
     private static ?bool $columnaDocumentoDisponible = null;
 
+    public static function tiposDocumentosProfesional(): array
+    {
+        return [
+            'Foto',
+            'Hoja de vida',
+            'Cédula',
+            'Antecedentes',
+            'Tarjeta profesional',
+            'Certificados de estudios',
+            'Afiliación a seguridad social',
+            'Soportes laborales',
+            'Soportes profesionales de la salud',
+        ];
+    }
+
     public function __construct(private PDO $db)
     {
     }

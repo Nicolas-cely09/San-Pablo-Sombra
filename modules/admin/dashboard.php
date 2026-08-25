@@ -43,6 +43,7 @@ $csrfToken = generarTokenCsrf();
 $profesionales = $adminController->listarProfesionales();
 $pacientes = $adminController->listarPacientes();
 $asignaciones = $adminController->listarAsignaciones();
+$tiposDocumentosProfesional = UserModel::tiposDocumentosProfesional();
 
 $totalProfesionales = count($profesionales);
 $totalPacientes = count($pacientes);
@@ -365,6 +366,8 @@ function badgeEstado(string $estado): string
         .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .field { display: flex; flex-direction: column; gap: 4px; }
         .field.full { grid-column: 1 / -1; }
+        .document-profesional-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+        .document-profesional-row .link-btn { margin: 0; }
 
         label { font-size: 0.8rem; color: #4b6383; font-weight: 700; }
 
@@ -574,7 +577,22 @@ function badgeEstado(string $estado): string
                             <div class="field"><label>Apellido</label><input type="text" name="apellido" required></div>
                             <div class="field"><label>Telefono</label><input type="text" name="telefono"></div>
                             <div class="field"><label>Contrasena inicial</label><input type="password" name="password" minlength="8" required></div>
-                            <div class="field"><label>Foto</label><input type="file" name="fotografia_profesional" accept="image/*"></div>
+                            <div class="field full">
+                                <label>Documentos del profesional</label>
+                                <div id="documentosProfesionalContainer">
+                                    <div class="document-profesional-row">
+                                        <select name="documentos_tipo[]">
+                                            <option value="">Selecciona un tipo...</option>
+                                            <?php foreach ($tiposDocumentosProfesional as $tipoDocumento): ?>
+                                                <option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="file" name="documentos_archivo[]" data-profesional-file>
+                                        <button class="link-btn" type="button" data-remove-profesional-document style="display: none;">Quitar</button>
+                                    </div>
+                                </div>
+                                <button class="action-toggle" type="button" id="addProfesionalDocument">Añadir otro documento</button>
+                            </div>
                         </div>
                         <button class="btn btn-primary" type="submit">Guardar profesional</button>
                     </form>
@@ -843,6 +861,25 @@ function badgeEstado(string $estado): string
             });
 
             showOverview();
+
+            const documentosProfesionalContainer = document.getElementById('documentosProfesionalContainer');
+            const addProfesionalDocument = document.getElementById('addProfesionalDocument');
+            if (documentosProfesionalContainer && addProfesionalDocument) {
+                addProfesionalDocument.addEventListener('click', function () {
+                    const fila = documentosProfesionalContainer.querySelector('.document-profesional-row').cloneNode(true);
+                    fila.querySelector('select').value = '';
+                    fila.querySelector('[data-profesional-file]').value = '';
+                    fila.querySelector('[data-remove-profesional-document]').style.display = 'inline-block';
+                    documentosProfesionalContainer.appendChild(fila);
+                });
+
+                documentosProfesionalContainer.addEventListener('click', function (event) {
+                    const boton = event.target.closest('[data-remove-profesional-document]');
+                    if (boton) {
+                        boton.closest('.document-profesional-row').remove();
+                    }
+                });
+            }
         })();
     </script>
 </body>
