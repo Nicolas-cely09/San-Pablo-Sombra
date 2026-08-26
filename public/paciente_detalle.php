@@ -208,7 +208,7 @@ $flash = obtenerFlash();
 $csrfToken = generarTokenCsrf();
 
 $fotoPaciente = null;
-foreach ($adjuntosVisibles as $adjunto) {
+foreach ($adjuntos as $adjunto) {
     $tipo = strtolower((string) ($adjunto['tipo'] ?? ''));
     if (str_contains($tipo, 'foto')) {
         $fotoPaciente = (string) $adjunto['ruta_archivo'];

@@ -443,11 +443,13 @@ function badgeEstado(string $estado): string
 
         #panel-pacientes.iframe-activo .actions .action-toggle[data-open-iframe] { display: none; }
         #panel-pacientes.iframe-activo .table-title,
+        #panel-pacientes.iframe-activo .table-title-row,
         #panel-pacientes.iframe-activo .table-wrap { display: none !important; }
 
         #panel-profesionales.detalle-activo .actions,
         #panel-profesionales.detalle-activo .action-panel,
         #panel-profesionales.detalle-activo .table-title,
+        #panel-profesionales.detalle-activo .table-title-row,
         #panel-profesionales.detalle-activo .table-wrap { display: none !important; }
 
         #panel-profesionales.detalle-activo > .detalle-frame-panel { margin-top: 0; }
@@ -627,9 +629,6 @@ function badgeEstado(string $estado): string
                 </div>
                         <section class="detalle-frame-panel" id="detalle-profesional-panel">
                             <iframe id="detalleProfesionalFrame" title="Detalle del profesional" src="about:blank"></iframe>
-                                <div class="frame-footer">
-                                    <p class="frame-label" id="detalleProfesionalTitulo">Detalle del profesional</p>
-                                </div>
                         </section>
                 <div class="table-wrap">
                     <table>
@@ -668,9 +667,6 @@ function badgeEstado(string $estado): string
             <section class="panel" id="panel-pacientes">
                 <section class="detalle-frame-panel" id="detalle-paciente-panel">
                     <iframe id="detallePacienteFrame" title="Detalle del paciente" src="about:blank"></iframe>
-                    <div class="frame-footer">
-                        <p class="frame-label" id="detalleFrameTitulo">Detalle del paciente</p>
-                    </div>
                 </section>
 
                 <div class="table-title-row">
