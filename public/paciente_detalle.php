@@ -436,6 +436,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             font-size: 0.85rem;
             font-weight: 600;
             cursor: help;
+            position: relative;
         }
 
         .objetivo-estado.no-cumplido {
@@ -448,6 +449,39 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             background: #e4f8d5;
             color: #4a7b14;
             border: 1px solid #cbeab0;
+        }
+
+        .tooltip-observacion {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            max-width: 300px;
+            white-space: normal;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 8px;
+        }
+
+        .tooltip-observacion::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #2c3e50;
+        }
+
+        .objetivo-estado.no-cumplido:hover .tooltip-observacion {
+            display: block;
         }
 
         .modal-overlay {
@@ -471,11 +505,15 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             background: #fff;
             border-radius: 12px;
             padding: 20px;
-            max-width: 600px;
+            max-width: 400px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: 0 14px 34px rgba(30, 54, 88, 0.2);
+        }
+
+        .modal-content.small-modal {
+            max-width: 350px;
         }
 
         .modal-header {
@@ -512,11 +550,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             color: #222;
         }
 
-        .btn-observacion {
-            margin-top: 8px;
-            font-size: 0.85rem;
-            padding: 6px 12px;
-        }
+
     </style>
 </head>
 <body>
@@ -628,9 +662,13 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                             <td><?= e((string) $objetivo['descripcion']) ?></td>
                             <td>
                                 <?php if ($esVistaAdmin): ?>
-                                    <span class="objetivo-estado <?= $objetivo['estado'] === 'no_cumplido' ? 'no-cumplido' : '' ?>" <?= $objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion']) ? 'title="' . e((string) $objetivo['observacion']) . '"' : '' ?>>
+                                    <span class="objetivo-estado <?= $objetivo['estado'] === 'no_cumplido' ? 'no-cumplido' : '' ?>"
+                                          <?= $objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion']) ? 'data-observacion="' . e((string) $objetivo['observacion']) . '"' : '' ?>>
                                         <?= e((string) $objetivo['estado']) ?>
                                     </span>
+                                    <?php if ($objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion'])): ?>
+                                        <div class="tooltip-observacion"><?= e((string) $objetivo['observacion']) ?></div>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <form method="post" action="">
                                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
@@ -641,7 +679,6 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                                             <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
                                             <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
                                         </select>
-                                        <button class="btn btn-secondary btn-observacion" type="button" <?= $objetivo['estado'] !== 'no_cumplido' ? 'style="display:none;"' : '' ?>>Agregar observación</button>
                                     </form>
                                 <?php endif; ?>
                             </td>
@@ -805,21 +842,12 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const cancelarObservacion = document.getElementById('cancelarObservacion');
 
             document.querySelectorAll('.estado-objetivo').forEach((select) => {
-                const btnObservacion = select.form.querySelector('.btn-observacion');
-                const sincronizarObservacion = () => {
-                    if (btnObservacion) {
-                        btnObservacion.style.display = select.value === 'no_cumplido' ? 'inline-block' : 'none';
-                    }
-                };
-                select.addEventListener('change', sincronizarObservacion);
-                sincronizarObservacion();
-
-                if (btnObservacion) {
-                    btnObservacion.addEventListener('click', function () {
-                        objetivoIdModal.value = select.form.querySelector('[name="objetivo_id"]').value;
+                select.addEventListener('change', function () {
+                    if (this.value === 'no_cumplido') {
+                        objetivoIdModal.value = this.form.querySelector('[name="objetivo_id"]').value;
                         modalObservacion.classList.add('active');
-                    });
-                }
+                    }
+                });
             });
 
             if (cerrarModalObservacion) {
@@ -881,9 +909,9 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 
     <!-- Modal para observaciones de objetivos -->
     <div class="modal-overlay" id="modalObservacion">
-        <div class="modal-content">
+        <div class="modal-content small-modal">
             <div class="modal-header">
-                <h3 class="modal-title">Observación del objetivo no cumplido</h3>
+                <h3 class="modal-title">Observación</h3>
                 <button class="modal-close" type="button" id="cerrarModalObservacion">&times;</button>
             </div>
             <form method="post" action="" id="formObservacion">
@@ -897,7 +925,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 </div>
                 <div class="actions">
                     <button class="btn btn-secondary" type="button" id="cancelarObservacion">Cancelar</button>
-                    <button class="btn" type="submit">Guardar observación</button>
+                    <button class="btn" type="submit">Guardar</button>
                 </div>
             </form>
         </div>
