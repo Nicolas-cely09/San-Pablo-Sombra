@@ -97,10 +97,12 @@ $baseQuery = $esAdmin ? '?id=' . $profesionalId : '';
         .foto-wrap img { width:100%; height:100%; object-fit:cover; display:block; } .foto-placeholder { padding:12px; color:var(--soft); text-align:center; font-size:.86rem; }
         .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .field { display:flex; flex-direction:column; gap:4px; } .field.full { grid-column:1/-1; }
         label { color:#4b6383; font-size:.8rem; font-weight:700; } input, select, textarea { width:100%; border:1px solid #cddbeb; border-radius:8px; padding:8px 10px; font:inherit; color:var(--ink); background:#fff; } input[disabled], select[disabled] { background:#f7f9fd; color:#51627d; }
-        .btn { border:0; border-radius:8px; padding:9px 12px; color:#fff; background:linear-gradient(135deg,var(--blue),var(--violet)); font:inherit; font-weight:700; cursor:pointer; } .btn-secondary { background:linear-gradient(135deg,var(--blue),#54b4ce); }
+        .btn { border:0; border-radius:8px; padding:9px 12px; color:#fff; background:linear-gradient(135deg,var(--blue),var(--violet)); font:inherit; font-weight:700; cursor:pointer; transition:transform .18s ease,box-shadow .18s ease,filter .18s ease; } .btn:hover { transform:translateY(-1px); box-shadow:0 8px 18px rgba(57,132,198,.2); filter:saturate(1.08); } .btn:focus-visible { outline:3px solid #d91b72; outline-offset:3px; } .btn-secondary { background:linear-gradient(135deg,var(--blue),#54b4ce); }
         .actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; } .section-panel { display:none; } .section-panel.active { display:block; }
         table { width:100%; border-collapse:collapse; } th,td { padding:8px; border-bottom:1px solid #edf2fb; text-align:left; vertical-align:top; } th { background:#f3f7fd; color:#50627c; }
         a { color:var(--blue); }
+        input:focus, select:focus, textarea:focus { border-color:var(--blue); outline:0; box-shadow:0 0 0 3px rgba(57,132,198,.16); }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration:.01ms !important; animation-duration:.01ms !important; } }
         @media (max-width:920px) { body { padding:8px; } .info-layout,.field-grid { grid-template-columns:1fr; } .actions .btn { width:100%; } }
     </style>
 </head>
@@ -126,14 +128,14 @@ $baseQuery = $esAdmin ? '?id=' . $profesionalId : '';
             </form>
         </div>
     </div>
-    <div class="card section-panel" id="panelDocumentos">
-        <h2>Documentos adjuntos</h2>
-        <?php if (count($adjuntos) === 0): ?><p>No hay documentos cargados.</p><?php else: ?><ul><?php foreach ($adjuntos as $adjunto): ?><li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li><?php endforeach; ?></ul><?php endif; ?>
-        <?php if ($esAdmin): ?>
-        <form method="post" action="<?= e($baseQuery) ?>" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="subir_adjunto"><div class="field-grid"><div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><option value="Foto">Foto</option><option value="Hoja de vida">Hoja de vida</option><option value="Cédula">Cédula</option><option value="Antecedentes">Antecedentes</option><option value="Tarjeta profesional">Tarjeta profesional</option><option value="Certificados de estudios">Certificados de estudios</option><option value="Afiliación a seguridad social">Afiliación a seguridad social</option><option value="Soportes laborales">Soportes laborales</option><option value="Soportes profesionales de la salud">Soportes profesionales de la salud</option></select></div><div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div></div><button class="btn" type="submit">Cargar documento</button></form>
-        <?php endif; ?>
-    </div>
-    <div class="card"><div class="actions"><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnModificar">Modificar</button><?php endif; ?><button class="btn btn-secondary" type="button" id="btnDocumentos" aria-expanded="false">Consultar documentos</button></div></div>
+    <?php if ($esAdmin): ?>
+        <div class="card section-panel" id="panelDocumentos">
+            <h2>Documentos adjuntos</h2>
+            <?php if (count($adjuntos) === 0): ?><p>No hay documentos cargados.</p><?php else: ?><ul><?php foreach ($adjuntos as $adjunto): ?><li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li><?php endforeach; ?></ul><?php endif; ?>
+            <form method="post" action="<?= e($baseQuery) ?>" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="subir_adjunto"><div class="field-grid"><div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><?php foreach (UserModel::tiposDocumentosProfesional() as $tipoDocumento): ?><option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option><?php endforeach; ?></select></div><div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div></div><button class="btn" type="submit">Cargar documento</button></form>
+        </div>
+    <?php endif; ?>
+    <div class="card"><div class="actions"><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnModificar">Modificar</button><?php endif; ?><?php if ($esAdmin): ?><button class="btn btn-secondary" type="button" id="btnDocumentos" aria-expanded="false">Consultar documentos</button><?php endif; ?></div></div>
     <script>
         (function () {
             const form = document.getElementById('formPerfil');
@@ -150,11 +152,13 @@ $baseQuery = $esAdmin ? '?id=' . $profesionalId : '';
                     form.submit();
                 });
             }
-            btnDocumentos.addEventListener('click', function () {
-                const abierto = documentos.classList.toggle('active');
-                btnDocumentos.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-                btnDocumentos.textContent = abierto ? 'Cerrar documentos' : 'Consultar documentos';
-            });
+            if (btnDocumentos && documentos) {
+                btnDocumentos.addEventListener('click', function () {
+                    const abierto = documentos.classList.toggle('active');
+                    btnDocumentos.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                    btnDocumentos.textContent = abierto ? 'Cerrar documentos' : 'Consultar documentos';
+                });
+        }   
             if (tipoSelect && archivoInput) {
                 tipoSelect.addEventListener('change', function () {
                     if (this.value === 'Foto') {

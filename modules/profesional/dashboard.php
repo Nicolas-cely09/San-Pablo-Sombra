@@ -236,6 +236,7 @@ function badgeEstadoProfesional(string $estado): string
             border-left: 4px solid var(--blue-sp);
             padding-left: 12px;
         }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
 
         .menu-logout {
             border-top: 1px solid #eeeeee;
@@ -454,11 +455,13 @@ function badgeEstadoProfesional(string $estado): string
                 <p class="sidebar-session">Sesion: <?= e($_SESSION['usuario']['nombre_completo']) ?></p>
             </div>
 
+            <nav aria-label="Navegacion principal">
             <ul class="menu">
                 <li><button type="button" data-panel="pacientes"><span class="icon patient"></span>Pacientes asignados</button></li>
                 <li><button type="button" data-panel="perfil"><span class="icon patient"></span>Mi perfil</button></li>
                 <li class="menu-logout"><a href="/Sanpablo/public/logout.php"><span class="icon logout"></span>Logout</a></li>
             </ul>
+            </nav>
         </aside>
 
         <main class="main">

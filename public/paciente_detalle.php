@@ -38,6 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new InvalidArgumentException('Selecciona un tipo y un archivo valido.');
                 }
 
+                $tiposPermitidos = $esVistaAdmin
+                    ? PacienteModel::tiposDocumentosPaciente()
+                    : PacienteModel::tiposDocumentosCargablesProfesional();
+                if (!in_array($tipoAdjunto, $tiposPermitidos, true)) {
+                    throw new RuntimeException('No tienes permiso para cargar este tipo de documento.');
+                }
+
                 $pacienteModel->guardarAdjunto($pacienteId, $archivo, $tipoAdjunto);
                 flash('ok', 'Documento adjunto cargado correctamente.');
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=documentos');
@@ -55,13 +62,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($accion === 'crear_objetivo_especifico') {
-                $descripcion = trim((string) ($_POST['descripcion_objetivo'] ?? ''));
-                $frecuencia = trim((string) ($_POST['frecuencia'] ?? ''));
-                if ($descripcion === '' || !in_array($frecuencia, ['Semanal', 'Quincenal'], true)) {
-                    throw new InvalidArgumentException('Completa la descripcion y una frecuencia valida.');
+                if (!$esVistaAdmin) {
+                    throw new RuntimeException('Solo el administrador puede crear objetivos especificos.');
                 }
 
-                $pacienteModel->crearObjetivoEspecifico($pacienteId, $descripcion, $frecuencia);
+                $descripcion = trim((string) ($_POST['descripcion_objetivo'] ?? ''));
+                if ($descripcion === '') {
+                    throw new InvalidArgumentException('La descripcion del objetivo es obligatoria.');
+                }
+
+                $pacienteModel->crearObjetivoEspecifico($pacienteId, $descripcion, 'Semanal');
                 flash('ok', 'Objetivo especifico agregado correctamente.');
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=objetivos');
             }
@@ -88,6 +98,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('No tienes permisos para registrar bitacoras.');
             }
 
+                $camposBitacora = [
+                    'fecha_bitacora' => 'fecha',
+                    'grado' => 'grado',
+                    'actividad_realizada' => 'actividad realizada',
+                    'nivel_participacion' => 'nivel de participacion',
+                    'descripcion_participacion' => 'descripcion de la participacion',
+                    'apoyos_brindados' => 'apoyos brindados',
+                    'avances_logros' => 'avances de logros estipulados',
+                    'dificultades_observadas' => 'dificultades observadas',
+                ];
+                foreach ($camposBitacora as $campo => $nombreCampo) {
+                    if (trim((string) ($_POST[$campo] ?? '')) === '') {
+                        throw new InvalidArgumentException('Completa el campo: ' . $nombreCampo . '.');
+                    }
+                }
+                if (!in_array((string) $_POST['nivel_participacion'], ['Alta', 'Media', 'Baja'], true)) {
+                    throw new InvalidArgumentException('Selecciona un nivel de participacion valido.');
+                }
+
             $asignacion = $asignacionModel->obtenerAsignacionPorPacienteYProfesional($pacienteId, $usuarioId);
             if ($asignacion === null) {
                 throw new RuntimeException('No se encontro una asignacion valida para este paciente.');
@@ -95,10 +124,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $asignacionModel->crearInforme($usuarioId, [
                 'asignacion_id' => (int) $asignacion['id'],
-                'resumen_jornada' => trim((string) ($_POST['resumen_jornada'] ?? '')),
-                'comportamiento_observado' => trim((string) ($_POST['comportamiento_observado'] ?? '')),
-                'novedades_alertas' => trim((string) ($_POST['novedades_alertas'] ?? '')),
-                'manejo_brindado' => trim((string) ($_POST['manejo_brindado'] ?? '')),
+                'fecha_bitacora' => trim((string) ($_POST['fecha_bitacora'] ?? date('Y-m-d'))),
+                'grado' => trim((string) ($_POST['grado'] ?? '')),
+                'resumen_jornada' => trim((string) ($_POST['actividad_realizada'] ?? '')),
+                'nivel_participacion' => trim((string) ($_POST['nivel_participacion'] ?? '')),
+                'descripcion_participacion' => trim((string) ($_POST['descripcion_participacion'] ?? '')),
+                'apoyos_brindados' => trim((string) ($_POST['apoyos_brindados'] ?? '')),
+                'avances_logros' => trim((string) ($_POST['avances_logros'] ?? '')),
+                'dificultades_observadas' => trim((string) ($_POST['dificultades_observadas'] ?? '')),
+                'observaciones' => trim((string) ($_POST['observaciones'] ?? '')),
+                'firma_digital' => trim((string) ($_POST['firma_digital'] ?? '')),
+                'comportamiento_observado' => trim((string) ($_POST['descripcion_participacion'] ?? '')),
+                'novedades_alertas' => trim((string) ($_POST['dificultades_observadas'] ?? '')),
+                'manejo_brindado' => trim((string) ($_POST['apoyos_brindados'] ?? '')),
             ]);
 
             flash('ok', 'Bitacora registrada correctamente.');
@@ -160,6 +198,12 @@ if (!$paciente) {
 }
 
 $adjuntos = $pacienteModel->listarAdjuntos($pacienteId);
+$tiposVisibles = $esVistaAdmin
+    ? PacienteModel::tiposDocumentosPaciente()
+    : PacienteModel::tiposDocumentosVisiblesProfesional();
+$adjuntosVisibles = array_values(array_filter($adjuntos, static function (array $adjunto) use ($tiposVisibles): bool {
+    return in_array((string) ($adjunto['tipo'] ?? ''), $tiposVisibles, true);
+}));
 $objetivoGeneral = $pacienteModel->obtenerObjetivoGeneral($pacienteId);
 $objetivosEspecificos = $pacienteModel->listarObjetivosEspecificos($pacienteId);
 $informes = $asignacionModel->listarPorPaciente($pacienteId);
@@ -225,6 +269,10 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             margin-bottom: 10px;
         }
 
+        .patient-summary h1 { margin-bottom: 12px; }
+        body.section-open .patient-summary .info-layout { display: none; }
+        body.section-open .patient-summary { margin-bottom: 10px; }
+
         h1, h2 { margin-top: 0; color: #24486f; }
         h1 { margin-bottom: 12px; font-size: clamp(1.45rem, 2.4vw, 2rem); }
         h2 { margin-bottom: 10px; font-size: 1.25rem; }
@@ -276,7 +324,11 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             font: inherit;
             color: var(--text-main);
             background: #fff;
+            transition: border-color .18s ease, box-shadow .18s ease;
         }
+
+        input:focus, select:focus, textarea:focus { border-color: var(--blue-sp); outline: 0; box-shadow: 0 0 0 3px rgba(57, 132, 198, .16); }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 3px; }
 
         textarea { min-height: 80px; resize: vertical; }
 
@@ -344,7 +396,9 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             cursor: pointer;
             background: linear-gradient(135deg, #3984c6, #8b3a8b);
             color: #fff;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(57, 132, 198, .2); filter: saturate(1.08); }
 
         .btn-secondary {
             background: linear-gradient(135deg, #3984c6, #54b4ce);
@@ -354,6 +408,11 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
         .section-panel.active { display: block; }
         .observacion-objetivo { display: none; margin-top: 6px; }
         .observacion-objetivo.visible { display: block; }
+        .objetivos-especificos-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 10px; }
+        .objetivos-especificos-heading h3 { margin: 0; }
+        .btn-add-objective { width: 38px; height: 38px; margin: 0; padding: 0; border-radius: 50%; font-size: 1.45rem; line-height: 1; }
+        .objective-create-form { display: none; margin-bottom: 14px; }
+        .objective-create-form.active { display: block; }
 
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 8px; border-bottom: 1px solid #edf2fb; text-align: left; vertical-align: top; }
@@ -368,12 +427,102 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             .actions { justify-content: stretch; }
             .actions .btn { width: 100%; }
         }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+        .objetivo-estado {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: help;
+        }
+
+        .objetivo-estado.no-cumplido {
+            background: #ffe6eb;
+            color: #9f2444;
+            border: 1px solid #ffc9d8;
+        }
+
+        .objetivo-estado:not(.no-cumplido) {
+            background: #e4f8d5;
+            color: #4a7b14;
+            border: 1px solid #cbeab0;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 14px 34px rgba(30, 54, 88, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #24486f;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #61708a;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #222;
+        }
+
+        .btn-observacion {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
     </style>
 </head>
 <body>
     <?= renderToastFlash($flash) ?>
 
-    <div class="card">
+    <div class="card patient-summary">
         <h1><?= e($paciente['nombre'] . ' ' . $paciente['apellido']) ?></h1>
         <div class="info-layout">
             <div class="foto-wrap">
@@ -418,24 +567,24 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 
     <div class="card section-panel <?= ($seccionActiva === 'documentos') ? 'active' : '' ?>" id="panelDocumentos">
         <h2>Documentos adjuntos</h2>
-        <?php if (count($adjuntos) === 0): ?>
+        <?php if (count($adjuntosVisibles) === 0): ?>
             <p>No hay documentos cargados.</p>
         <?php else: ?>
             <ul>
-                <?php foreach ($adjuntos as $adjunto): ?>
+                <?php foreach ($adjuntosVisibles as $adjunto): ?>
                     <li><strong><?= e((string) $adjunto['tipo']) ?>:</strong> <a href="<?= e((string) $adjunto['ruta_archivo']) ?>" target="_blank"><?= e((string) $adjunto['nombre_original']) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-        <?php if ($esVistaAdmin): ?>
+        <?php if ($esVistaAdmin || $esVistaProfesional): ?>
         <form method="post" action="" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="accion" value="subir_adjunto">
             <div class="field-grid">
-                <div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><option value="Foto">Foto</option><option value="Documento Menor">Documento Menor</option><option value="Documentos padre">Documentos padre</option><option value="Consentimientos informados">Consentimientos informados</option><option value="Carta de autorización programa sombra">Carta de autorización programa sombra</option><option value="Historia clínica">Historia clínica</option><option value="Contrato laboral">Contrato laboral</option></select></div>
+                <div class="field"><label>Tipo de documento</label><select name="tipo_adjunto" id="tipoDocumentoSelect" required><option value="">Selecciona un tipo...</option><?php foreach (($esVistaAdmin ? PacienteModel::tiposDocumentosPaciente() : PacienteModel::tiposDocumentosCargablesProfesional()) as $tipoDocumento): ?><option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option><?php endforeach; ?></select></div>
                 <div class="field"><label>Archivo</label><input type="file" name="documento_adjunto" id="archivoInput" required></div>
             </div>
-            <button class="btn" type="submit">Cargar documento</button>
+            <button class="btn" type="submit"><?= $esVistaAdmin ? 'Cargar documento' : 'Cargar anexo de seguimiento' ?></button>
         </form>
         <?php endif; ?>
     </div>
@@ -452,41 +601,49 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             <button class="btn" type="submit">Guardar objetivo general</button>
         </form>
 
-        <h3>Objetivos especificos</h3>
-        <form method="post" action="">
+        <div class="objetivos-especificos-heading">
+            <h3>Objetivos especificos</h3>
+            <button class="btn btn-secondary btn-add-objective" type="button" id="btnNuevoObjetivo" aria-label="Añadir objetivo especifico" aria-expanded="false">+</button>
+        </div>
+        <?php if ($esVistaAdmin): ?>
+        <form method="post" action="" class="objective-create-form" id="formNuevoObjetivo">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="accion" value="crear_objetivo_especifico">
             <div class="field-grid">
                 <div class="field full"><label>Descripcion del objetivo</label><textarea name="descripcion_objetivo" required placeholder="Describe el resultado observable que se evaluara"></textarea></div>
-                <div class="field"><label>Frecuencia de evaluacion</label><select name="frecuencia" required><option value="Semanal">Semanal</option><option value="Quincenal">Quincenal</option></select></div>
             </div>
-            <button class="btn btn-secondary" type="submit">Añadir objetivo especifico</button>
+            <button class="btn btn-secondary" type="submit">Guardar objetivo especifico</button>
         </form>
+        <?php endif; ?>
 
         <?php if (count($objetivosEspecificos) === 0): ?>
             <p>Aun no hay objetivos especificos registrados.</p>
         <?php else: ?>
             <table>
-                <thead><tr><th>Codigo</th><th>Objetivo</th><th>Frecuencia</th><th>Evaluacion</th></tr></thead>
+                <thead><tr><th>Codigo</th><th>Objetivo</th><th>Evaluacion</th></tr></thead>
                 <tbody>
                     <?php foreach ($objetivosEspecificos as $objetivo): ?>
                         <tr>
                             <td><strong><?= e((string) $objetivo['codigo']) ?></strong></td>
                             <td><?= e((string) $objetivo['descripcion']) ?></td>
-                            <td><?= e((string) $objetivo['frecuencia']) ?></td>
                             <td>
-                                <form method="post" action="">
-                                    <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                    <input type="hidden" name="accion" value="evaluar_objetivo">
-                                    <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
-                                    <select name="estado_objetivo" class="estado-objetivo">
-                                        <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                        <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
-                                        <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
-                                    </select>
-                                    <textarea name="observacion_objetivo" class="observacion-objetivo" placeholder="Observacion si no se cumplio"><?= e((string) ($objetivo['observacion'] ?? '')) ?></textarea>
-                                    <button class="btn" type="submit">Guardar evaluacion</button>
-                                </form>
+                                <?php if ($esVistaAdmin): ?>
+                                    <span class="objetivo-estado <?= $objetivo['estado'] === 'no_cumplido' ? 'no-cumplido' : '' ?>" <?= $objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion']) ? 'title="' . e((string) $objetivo['observacion']) . '"' : '' ?>>
+                                        <?= e((string) $objetivo['estado']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <form method="post" action="">
+                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                        <input type="hidden" name="accion" value="evaluar_objetivo">
+                                        <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
+                                        <select name="estado_objetivo" class="estado-objetivo">
+                                            <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                            <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
+                                            <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
+                                        </select>
+                                        <button class="btn btn-secondary btn-observacion" type="button" <?= $objetivo['estado'] !== 'no_cumplido' ? 'style="display:none;"' : '' ?>>Agregar observación</button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -502,21 +659,37 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                 <input type="hidden" name="accion" value="crear_informe">
                 <div class="field-grid">
+                    <div class="field"><label>Nombre del estudiante</label><input type="text" value="<?= e($paciente['nombre'] . ' ' . $paciente['apellido']) ?>" readonly></div>
+                    <div class="field"><label>Grado</label><input type="text" name="grado" maxlength="100" required></div>
+                    <div class="field"><label>Fecha</label><input type="date" name="fecha_bitacora" value="<?= e(date('Y-m-d')) ?>" required></div>
+                    <div class="field"><label>Nivel de participación</label><select name="nivel_participacion" required><option value="">Selecciona un nivel...</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></div>
                     <div class="field full">
-                        <label>Actividad diaria</label>
-                        <textarea name="resumen_jornada" required placeholder="Describe la actividad desarrollada durante la jornada"></textarea>
+                        <label>Actividad realizada</label>
+                        <textarea name="actividad_realizada" maxlength="250" required placeholder="Describe la actividad realizada"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Comportamiento del paciente</label>
-                        <textarea name="comportamiento_observado" placeholder="Observa comportamientos, logros o crisis del dia"></textarea>
+                        <label>Descripción de la participación</label>
+                        <textarea name="descripcion_participacion" maxlength="250" required placeholder="Describe la participación del estudiante"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Novedades o alertas</label>
-                        <textarea name="novedades_alertas" placeholder="Registra novedades relevantes de la jornada"></textarea>
+                        <label>Apoyos brindados</label>
+                        <textarea name="apoyos_brindados" maxlength="250" required placeholder="Describe los apoyos brindados"></textarea>
                     </div>
                     <div class="field full">
-                        <label>Manejo brindado</label>
-                        <textarea name="manejo_brindado" placeholder="Describe el manejo aplicado en caso de crisis o mal comportamiento"></textarea>
+                        <label>Avances de logros estipulados</label>
+                        <textarea name="avances_logros" maxlength="250" required placeholder="Describe los avances observados"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Dificultades observadas</label>
+                        <textarea name="dificultades_observadas" maxlength="250" required placeholder="Describe las dificultades observadas"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Observaciones</label>
+                        <textarea name="observaciones" maxlength="250" placeholder="Registra observaciones adicionales"></textarea>
+                    </div>
+                    <div class="field full">
+                        <label>Firma digital</label>
+                        <input type="text" name="firma_digital" maxlength="255" placeholder="Nombre del profesional o referencia de firma">
                     </div>
                 </div>
                 <button class="btn" type="submit">Guardar bitácora</button>
@@ -548,8 +721,19 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 bitacora: document.getElementById('panelBitacora')
             };
             const botonDocumentos = document.querySelector('[data-section="documentos"]');
+            const btnNuevoObjetivo = document.getElementById('btnNuevoObjetivo');
+            const formNuevoObjetivo = document.getElementById('formNuevoObjetivo');
+
+            if (btnNuevoObjetivo && formNuevoObjetivo) {
+                btnNuevoObjetivo.addEventListener('click', function () {
+                    const abierto = formNuevoObjetivo.classList.toggle('active');
+                    btnNuevoObjetivo.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                    btnNuevoObjetivo.textContent = abierto ? '−' : '+';
+                });
+            }
 
             function mostrarSeccion(nombre, actualizarBoton = true) {
+                document.body.classList.toggle('section-open', Boolean(nombre));
                 Object.keys(paneles).forEach((clave) => {
                     const panel = paneles[clave];
                     if (!panel) {
@@ -613,14 +797,47 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const formEditarPaciente = document.getElementById('formEditarPaciente');
             let modoEdicion = false;
 
+            // Modal de observaciones
+            const modalObservacion = document.getElementById('modalObservacion');
+            const formObservacion = document.getElementById('formObservacion');
+            const objetivoIdModal = document.getElementById('objetivoIdModal');
+            const cerrarModalObservacion = document.getElementById('cerrarModalObservacion');
+            const cancelarObservacion = document.getElementById('cancelarObservacion');
+
             document.querySelectorAll('.estado-objetivo').forEach((select) => {
-                const observacion = select.form.querySelector('.observacion-objetivo');
+                const btnObservacion = select.form.querySelector('.btn-observacion');
                 const sincronizarObservacion = () => {
-                    observacion.classList.toggle('visible', select.value === 'no_cumplido');
-                    observacion.required = select.value === 'no_cumplido';
+                    if (btnObservacion) {
+                        btnObservacion.style.display = select.value === 'no_cumplido' ? 'inline-block' : 'none';
+                    }
                 };
                 select.addEventListener('change', sincronizarObservacion);
                 sincronizarObservacion();
+
+                if (btnObservacion) {
+                    btnObservacion.addEventListener('click', function () {
+                        objetivoIdModal.value = select.form.querySelector('[name="objetivo_id"]').value;
+                        modalObservacion.classList.add('active');
+                    });
+                }
+            });
+
+            if (cerrarModalObservacion) {
+                cerrarModalObservacion.addEventListener('click', function () {
+                    modalObservacion.classList.remove('active');
+                });
+            }
+
+            if (cancelarObservacion) {
+                cancelarObservacion.addEventListener('click', function () {
+                    modalObservacion.classList.remove('active');
+                });
+            }
+
+            modalObservacion.addEventListener('click', function (e) {
+                if (e.target === modalObservacion) {
+                    modalObservacion.classList.remove('active');
+                }
             });
 
             if (btnModificar && formEditarPaciente) {
@@ -661,5 +878,29 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
     </script>
 
     <?= renderIframeNavButtons() ?>
+
+    <!-- Modal para observaciones de objetivos -->
+    <div class="modal-overlay" id="modalObservacion">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Observación del objetivo no cumplido</h3>
+                <button class="modal-close" type="button" id="cerrarModalObservacion">&times;</button>
+            </div>
+            <form method="post" action="" id="formObservacion">
+                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="accion" value="evaluar_objetivo">
+                <input type="hidden" name="objetivo_id" id="objetivoIdModal">
+                <input type="hidden" name="estado_objetivo" value="no_cumplido">
+                <div class="field">
+                    <label>¿Por qué no se cumplió el objetivo?</label>
+                    <textarea name="observacion_objetivo" required placeholder="Describe las razones por las que no se cumplió el objetivo"></textarea>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-secondary" type="button" id="cancelarObservacion">Cancelar</button>
+                    <button class="btn" type="submit">Guardar observación</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

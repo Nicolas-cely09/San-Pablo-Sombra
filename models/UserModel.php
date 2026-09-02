@@ -8,6 +8,21 @@ final class UserModel
     private const ROL_PROFESIONAL_SOMBRA_ID = 2;
     private static ?bool $columnaDocumentoDisponible = null;
 
+    public static function tiposDocumentosProfesional(): array
+    {
+        return [
+            'Foto',
+            'Hoja de vida',
+            'Cédula',
+            'Antecedentes',
+            'Tarjeta profesional',
+            'Certificados de estudios',
+            'Afiliación a seguridad social',
+            'Soportes laborales',
+            'Soportes profesionales de la salud',
+        ];
+    }
+
     public function __construct(private PDO $db)
     {
     }
@@ -163,6 +178,26 @@ final class UserModel
             'id' => (int) $data['id'],
             'rol_id' => self::ROL_PROFESIONAL_SOMBRA_ID,
         ]);
+    }
+
+    public function eliminarProfesional(int $id): void
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Profesional no valido.');
+        }
+
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM asignaciones_plan_sombra WHERE profesional_id = :id');
+        $stmt->execute(['id' => $id]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            throw new RuntimeException('No puedes eliminar un profesional que tiene asignaciones registradas.');
+        }
+
+        $stmt = $this->db->prepare('DELETE FROM usuarios WHERE id = :id AND rol_id = :rol_id');
+        $stmt->execute(['id' => $id, 'rol_id' => self::ROL_PROFESIONAL_SOMBRA_ID]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new RuntimeException('No se encontro el profesional para eliminar.');
+        }
     }
 
     public function listarProfesionalesActivos(): array

@@ -55,13 +55,31 @@ final class AsignacionModel
         $sql = '
             INSERT INTO historias_clinicas_reportes (
                 asignacion_id,
+                fecha_bitacora,
+                grado,
                 resumen_jornada,
+                nivel_participacion,
+                descripcion_participacion,
+                apoyos_brindados,
+                avances_logros,
+                dificultades_observadas,
+                observaciones,
+                firma_digital,
                 comportamiento_observado,
                 novedades_alertas,
                 manejo_brindado
             ) VALUES (
                 :asignacion_id,
+                :fecha_bitacora,
+                :grado,
                 :resumen_jornada,
+                :nivel_participacion,
+                :descripcion_participacion,
+                :apoyos_brindados,
+                :avances_logros,
+                :dificultades_observadas,
+                :observaciones,
+                :firma_digital,
                 :comportamiento_observado,
                 :novedades_alertas,
                 :manejo_brindado
@@ -72,7 +90,16 @@ final class AsignacionModel
 
         return $stmt->execute([
             'asignacion_id' => $asignacionId,
+            'fecha_bitacora' => trim((string) ($data['fecha_bitacora'] ?? date('Y-m-d'))),
+            'grado' => trim((string) ($data['grado'] ?? '')),
             'resumen_jornada' => trim((string) ($data['resumen_jornada'] ?? '')),
+            'nivel_participacion' => trim((string) ($data['nivel_participacion'] ?? '')),
+            'descripcion_participacion' => trim((string) ($data['descripcion_participacion'] ?? '')),
+            'apoyos_brindados' => trim((string) ($data['apoyos_brindados'] ?? '')),
+            'avances_logros' => trim((string) ($data['avances_logros'] ?? '')),
+            'dificultades_observadas' => trim((string) ($data['dificultades_observadas'] ?? '')),
+            'observaciones' => trim((string) ($data['observaciones'] ?? '')),
+            'firma_digital' => trim((string) ($data['firma_digital'] ?? '')),
             'comportamiento_observado' => trim((string) ($data['comportamiento_observado'] ?? '')),
             'novedades_alertas' => trim((string) ($data['novedades_alertas'] ?? '')),
             'manejo_brindado' => trim((string) ($data['manejo_brindado'] ?? '')),
@@ -88,7 +115,16 @@ final class AsignacionModel
                 hcr.id,
                 hcr.asignacion_id,
                 hcr.fecha_registro,
+                hcr.fecha_bitacora,
+                hcr.grado,
                 hcr.resumen_jornada,
+                hcr.nivel_participacion,
+                hcr.descripcion_participacion,
+                hcr.apoyos_brindados,
+                hcr.avances_logros,
+                hcr.dificultades_observadas,
+                hcr.observaciones,
+                hcr.firma_digital,
                 hcr.comportamiento_observado,
                 hcr.novedades_alertas,
                 hcr.manejo_brindado,
@@ -115,7 +151,16 @@ final class AsignacionModel
             SELECT
                 hcr.id,
                 hcr.fecha_registro,
+                hcr.fecha_bitacora,
+                hcr.grado,
                 hcr.resumen_jornada,
+                hcr.nivel_participacion,
+                hcr.descripcion_participacion,
+                hcr.apoyos_brindados,
+                hcr.avances_logros,
+                hcr.dificultades_observadas,
+                hcr.observaciones,
+                hcr.firma_digital,
                 hcr.comportamiento_observado,
                 hcr.novedades_alertas,
                 hcr.manejo_brindado,
@@ -192,6 +237,15 @@ final class AsignacionModel
 
     private function asegurarEstructura(): void
     {
+        $this->asegurarColumna('historias_clinicas_reportes', 'fecha_bitacora', 'DATE NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'grado', 'VARCHAR(100) NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'nivel_participacion', 'VARCHAR(20) NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'descripcion_participacion', 'TEXT NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'apoyos_brindados', 'TEXT NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'avances_logros', 'TEXT NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'dificultades_observadas', 'TEXT NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'observaciones', 'TEXT NULL DEFAULT NULL');
+        $this->asegurarColumna('historias_clinicas_reportes', 'firma_digital', 'VARCHAR(255) NULL DEFAULT NULL');
         $this->asegurarColumna('historias_clinicas_reportes', 'manejo_brindado', 'TEXT NULL DEFAULT NULL');
     }
 

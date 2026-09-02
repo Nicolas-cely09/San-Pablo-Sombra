@@ -64,7 +64,16 @@ CREATE TABLE IF NOT EXISTS historias_clinicas_reportes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     asignacion_id INT NOT NULL,
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_bitacora DATE NULL,
+    grado VARCHAR(100) NULL,
     resumen_jornada TEXT NOT NULL,         -- Actividades desarrolladas durante el acompañamiento
+    nivel_participacion VARCHAR(20) NULL,
+    descripcion_participacion TEXT NULL,
+    apoyos_brindados TEXT NULL,
+    avances_logros TEXT NULL,
+    dificultades_observadas TEXT NULL,
+    observaciones TEXT NULL,
+    firma_digital VARCHAR(255) NULL,
     comportamiento_observado TEXT,       -- Conducta, crisis, logros o evoluciones del día
     novedades_alertas TEXT,              -- Notas de atención especial
     FOREIGN KEY (asignacion_id) REFERENCES asignaciones_plan_sombra(id) ON DELETE CASCADE ON UPDATE CASCADE

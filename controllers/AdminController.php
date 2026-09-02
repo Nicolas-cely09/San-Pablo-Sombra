@@ -46,8 +46,42 @@ final class AdminController
         ]);
 
         $profesional = $this->userModel->buscarPorIdentificador($documentoIdentidad);
-        if ($profesional !== null && isset($files['fotografia_profesional'])) {
-            $this->userModel->guardarAdjuntoProfesional((int) $profesional['id'], $files['fotografia_profesional'], 'Foto');
+        if ($profesional === null) {
+            throw new RuntimeException('No fue posible recuperar el profesional creado.');
+        }
+
+        $profesionalId = (int) $profesional['id'];
+        $tiposDocumentos = $input['documentos_tipo'] ?? [];
+        $archivos = $files['documentos_archivo'] ?? [];
+        if (!is_array($tiposDocumentos) || !is_array($archivos)) {
+            throw new InvalidArgumentException('La información de documentos no es válida.');
+        }
+
+        foreach ($tiposDocumentos as $indice => $tipo) {
+            $tipo = trim((string) $tipo);
+            $error = (int) ($archivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE);
+            if ($tipo === '' && $error === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            if (!in_array($tipo, UserModel::tiposDocumentosProfesional(), true)) {
+                throw new InvalidArgumentException('El tipo de documento del profesional no es válido.');
+            }
+            if ($error !== UPLOAD_ERR_OK || !isset($archivos['tmp_name'][$indice])) {
+                throw new InvalidArgumentException('Cada documento debe tener un archivo válido.');
+            }
+
+            $archivo = [
+                'name' => $archivos['name'][$indice] ?? '',
+                'type' => $archivos['type'][$indice] ?? '',
+                'tmp_name' => $archivos['tmp_name'][$indice],
+                'error' => $error,
+                'size' => $archivos['size'][$indice] ?? 0,
+            ];
+            $this->userModel->guardarAdjuntoProfesional($profesionalId, $archivo, $tipo);
+        }
+
+        if (isset($files['fotografia_profesional']) && !is_array($files['documentos_archivo'] ?? null)) {
+            $this->userModel->guardarAdjuntoProfesional($profesionalId, $files['fotografia_profesional'], 'Foto');
         }
     }
 
@@ -86,6 +120,16 @@ final class AdminController
             'telefono' => $telefono,
             'estado' => $estado,
         ]);
+    }
+
+    public function eliminarProfesional(array $input): void
+    {
+        $this->userModel->eliminarProfesional((int) ($input['id'] ?? 0));
+    }
+
+    public function eliminarPaciente(array $input): void
+    {
+        $this->pacienteModel->eliminar((int) ($input['id'] ?? 0));
     }
 
     public function crearPaciente(array $input, array $files = []): void
@@ -144,20 +188,35 @@ final class AdminController
             'objetivos_plan' => trim((string) ($input['objetivos_plan'] ?? '')),
         ]);
 
-        $adjuntos = [
-            'foto' => 'Foto',
-            'documento_menor' => 'Documento Menor',
-            'documentos_padre' => 'Documentos padre',
-            'consentimientos_informados' => 'Consentimientos informados',
-            'carta_autorizacion' => 'Carta de autorización programa sombra',
-            'historia_clinica' => 'Historia clínica',
-            'contrato_laboral' => 'Contrato laboral',
-        ];
+        $tiposDocumentos = $input['documentos_tipo'] ?? [];
+        $archivos = $files['documentos_archivo'] ?? [];
+        if (!is_array($tiposDocumentos) || !is_array($archivos)) {
+            throw new InvalidArgumentException('La información de documentos no es válida.');
+        }
 
-        foreach ($adjuntos as $campo => $tipo) {
-            if (isset($files[$campo])) {
-                $this->pacienteModel->guardarAdjunto($pacienteId, $files[$campo], $tipo);
+        foreach ($tiposDocumentos as $indice => $tipo) {
+            $tipo = trim((string) $tipo);
+            $archivo = $archivos['tmp_name'][$indice] ?? null;
+            $error = (int) ($archivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE);
+
+            if ($tipo === '' && $error === UPLOAD_ERR_NO_FILE) {
+                continue;
             }
+            if (!in_array($tipo, PacienteModel::tiposDocumentosPaciente(), true)) {
+                throw new InvalidArgumentException('El tipo de documento seleccionado no es válido.');
+            }
+            if ($error !== UPLOAD_ERR_OK || !isset($archivo)) {
+                throw new InvalidArgumentException('Cada documento debe tener un archivo válido.');
+            }
+
+            $archivoIndividual = [
+                'name' => $archivos['name'][$indice] ?? '',
+                'type' => $archivos['type'][$indice] ?? '',
+                'tmp_name' => $archivo,
+                'error' => $error,
+                'size' => $archivos['size'][$indice] ?? 0,
+            ];
+            $this->pacienteModel->guardarAdjunto($pacienteId, $archivoIndividual, $tipo);
         }
     }
 

@@ -4,6 +4,9 @@
 !.env.example
 config/*.local.php
 
+# Local UX research document
+Docs/Instructivo-UX-Sombra.md
+
 # Runtime uploads and generated files
 public/uploads/*
 !public/uploads/pacientes/

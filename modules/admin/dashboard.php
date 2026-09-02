@@ -26,9 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($accion === 'actualizar_profesional') {
             $adminController->actualizarProfesional($_POST);
             flash('ok', 'Profesional actualizado correctamente.');
+        } elseif ($accion === 'eliminar_profesional') {
+            $adminController->eliminarProfesional($_POST);
+            flash('ok', 'Profesional eliminado correctamente.');
         } elseif ($accion === 'actualizar_paciente') {
             $adminController->actualizarPaciente($_POST);
             flash('ok', 'Paciente actualizado correctamente.');
+        } elseif ($accion === 'eliminar_paciente') {
+            $adminController->eliminarPaciente($_POST);
+            flash('ok', 'Paciente eliminado correctamente.');
         } else {
             flash('error', 'Accion no soportada.');
         }
@@ -43,6 +49,7 @@ $csrfToken = generarTokenCsrf();
 $profesionales = $adminController->listarProfesionales();
 $pacientes = $adminController->listarPacientes();
 $asignaciones = $adminController->listarAsignaciones();
+$tiposDocumentosProfesional = UserModel::tiposDocumentosProfesional();
 
 $totalProfesionales = count($profesionales);
 $totalPacientes = count($pacientes);
@@ -365,6 +372,8 @@ function badgeEstado(string $estado): string
         .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .field { display: flex; flex-direction: column; gap: 4px; }
         .field.full { grid-column: 1 / -1; }
+        .document-profesional-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+        .document-profesional-row .link-btn { margin: 0; }
 
         label { font-size: 0.8rem; color: #4b6383; font-weight: 700; }
 
@@ -399,6 +408,10 @@ function badgeEstado(string $estado): string
             color: #24486f;
         }
 
+        .table-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+        .table-title-row .table-title { margin: 0; }
+        .table-title-row .add-button { flex: 0 0 auto; }
+
         .table-wrap {
             border: 1px solid #e5edf7;
             border-radius: 10px;
@@ -430,11 +443,16 @@ function badgeEstado(string $estado): string
 
         #panel-pacientes.iframe-activo .actions .action-toggle[data-open-iframe] { display: none; }
         #panel-pacientes.iframe-activo .table-title,
+        #panel-pacientes.iframe-activo .table-title-row,
         #panel-pacientes.iframe-activo .table-wrap { display: none !important; }
 
         #panel-profesionales.detalle-activo .actions,
+        #panel-profesionales.detalle-activo .action-panel,
         #panel-profesionales.detalle-activo .table-title,
+        #panel-profesionales.detalle-activo .table-title-row,
         #panel-profesionales.detalle-activo .table-wrap { display: none !important; }
+
+        #panel-profesionales.detalle-activo > .detalle-frame-panel { margin-top: 0; }
 
         .detalle-frame-panel iframe {
             width: 100%;
@@ -444,7 +462,6 @@ function badgeEstado(string $estado): string
             background: #fff;
             display: block;
         }
-
         .frame-footer {
             border-top: 1px solid #edf2fb;
             padding: 10px 12px;
@@ -460,6 +477,18 @@ function badgeEstado(string $estado): string
             color: #4b6383;
             font-weight: 700;
         }
+
+        .frame-footer .action-toggle { margin: 0; }
+        .status-label { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; font-size: .78rem; font-weight: 800; text-transform: capitalize; }
+        .status-label.status-active { background: #e6f6df; color: #287a45; }
+        .status-label.status-inactive, .status-label.status-finished { background: #fce8ed; color: #a32648; }
+        .delete-form { display: inline-flex; margin: 0; }
+        .delete-button { width: 34px; height: 34px; padding: 0; border: 1px solid #f2b8b5; border-radius: 7px; background: #fff5f4; color: #b42318; cursor: pointer; font-size: 1.05rem; line-height: 1; }
+        .delete-button:hover { background: #b42318; color: #fff; }
+        .delete-button:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
+        .add-button { width: 34px; height: 34px; padding: 0; border: 1px solid #c8dced; border-radius: 50%; background: #eef6fc; color: #2877b2; cursor: pointer; font-size: 1.35rem; font-weight: 700; line-height: 1; }
+        .add-button:hover { background: #2877b2; color: #fff; }
+        .add-button:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
 
         table { width: 100%; border-collapse: collapse; min-width: 860px; }
 
@@ -517,6 +546,7 @@ function badgeEstado(string $estado): string
             }
             .sidebar-overlay.active { display: block; }
             .main-menu-row { display: flex; }
+            button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #d91b72; outline-offset: 2px; }
             .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
             .stats, .field-grid { grid-template-columns: 1fr; }
             .detalle-frame-panel iframe { height: calc(100vh - 92px); min-height: 520px; }
@@ -536,11 +566,13 @@ function badgeEstado(string $estado): string
                 <p class="sidebar-session">Sesion: <?= e($_SESSION['usuario']['nombre_completo']) ?></p>
             </div>
 
+            <nav aria-label="Navegacion principal">
             <ul class="menu">
                 <li><button type="button" data-panel="profesionales"><span class="icon people"></span>Profesionales</button></li>
                 <li><button type="button" data-panel="pacientes"><span class="icon patient"></span>Pacientes</button></li>
                 <li class="menu-logout"><a href="/Sanpablo/public/logout.php"><span class="icon logout"></span>Logout</a></li>
             </ul>
+            </nav>
         </aside>
 
         <main class="main">
@@ -559,10 +591,6 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-profesionales">
-                <div class="actions">
-                    <button class="action-toggle" type="button" data-toggle="crear-profesional">Crear profesional</button>
-                </div>
-
                 <section class="action-panel" id="crear-profesional">
                     <form method="post" action="" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
@@ -574,16 +602,33 @@ function badgeEstado(string $estado): string
                             <div class="field"><label>Apellido</label><input type="text" name="apellido" required></div>
                             <div class="field"><label>Telefono</label><input type="text" name="telefono"></div>
                             <div class="field"><label>Contrasena inicial</label><input type="password" name="password" minlength="8" required></div>
-                            <div class="field"><label>Foto</label><input type="file" name="fotografia_profesional" accept="image/*"></div>
+                            <div class="field full">
+                                <label>Documentos del profesional</label>
+                                <div id="documentosProfesionalContainer">
+                                    <div class="document-profesional-row">
+                                        <select name="documentos_tipo[]">
+                                            <option value="">Selecciona un tipo...</option>
+                                            <?php foreach ($tiposDocumentosProfesional as $tipoDocumento): ?>
+                                                <option value="<?= e($tipoDocumento) ?>"><?= e($tipoDocumento) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="file" name="documentos_archivo[]" data-profesional-file>
+                                        <button class="link-btn" type="button" data-remove-profesional-document style="display: none;">Quitar</button>
+                                    </div>
+                                </div>
+                                <button class="action-toggle" type="button" id="addProfesionalDocument">Añadir otro documento</button>
+                            </div>
                         </div>
                         <button class="btn btn-primary" type="submit">Guardar profesional</button>
                     </form>
                 </section>
 
-                <h3 class="table-title">Listado de profesionales</h3>
+                <div class="table-title-row">
+                    <h3 class="table-title">Listado de profesionales</h3>
+                    <button id="btn-crear-profesional" class="add-button" type="button" data-toggle="crear-profesional" title="Crear profesional" aria-label="Crear profesional">+</button>
+                </div>
                         <section class="detalle-frame-panel" id="detalle-profesional-panel">
                             <iframe id="detalleProfesionalFrame" title="Detalle del profesional" src="about:blank"></iframe>
-                            <div class="frame-footer"><p class="frame-label" id="detalleProfesionalTitulo">Detalle del profesional</p></div>
                         </section>
                 <div class="table-wrap">
                     <table>
@@ -595,11 +640,12 @@ function badgeEstado(string $estado): string
                                 <th>Telefono</th>
                                 <th>Estado</th>
                                 <th>Detalle</th>
+                                <th>Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php if (count($profesionales) === 0): ?>
-                            <tr><td colspan="6">No hay profesionales registrados.</td></tr>
+                            <tr><td colspan="7">No hay profesionales registrados.</td></tr>
                         <?php else: ?>
                             <?php foreach ($profesionales as $pro): ?>
                                 <tr>
@@ -607,23 +653,9 @@ function badgeEstado(string $estado): string
                                     <td><?= e($pro['nombre'] . ' ' . $pro['apellido']) ?></td>
                                     <td><?= e($pro['email']) ?></td>
                                     <td><?= e((string) $pro['telefono']) ?></td>
-                                    <td>
-                                        <form method="post" action="" class="inline-form">
-                                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                            <input type="hidden" name="accion" value="actualizar_profesional">
-                                            <input type="hidden" name="id" value="<?= e((string) $pro['id']) ?>">
-                                            <input type="hidden" name="documento_identidad" value="<?= e((string) $pro['documento_identidad']) ?>">
-                                            <input type="hidden" name="nombre" value="<?= e($pro['nombre']) ?>">
-                                            <input type="hidden" name="apellido" value="<?= e($pro['apellido']) ?>">
-                                            <input type="hidden" name="email" value="<?= e($pro['email']) ?>">
-                                            <input type="hidden" name="telefono" value="<?= e((string) $pro['telefono']) ?>">
-                                            <select name="estado" onchange="this.form.submit()">
-                                                <option value="activo" <?= selected((string) $pro['estado'], 'activo') ?>>Activo</option>
-                                                <option value="inactivo" <?= selected((string) $pro['estado'], 'inactivo') ?>>Inactivo</option>
-                                            </select>
-                                        </form>
-                                    </td>
+                                    <td><span class="status-label <?= $pro['estado'] === 'activo' ? 'status-active' : 'status-inactive' ?>"><?= e((string) $pro['estado']) ?></span></td>
                                     <td><button class="link-btn" type="button" data-profesional-id="<?= e((string) $pro['id']) ?>">Ver detalle</button></td>
+                                    <td><form method="post" action="" class="delete-form" onsubmit="return confirm('¿Eliminar este profesional? Esta acción no se puede deshacer.');"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="eliminar_profesional"><input type="hidden" name="id" value="<?= e((string) $pro['id']) ?>"><button class="delete-button" type="submit" title="Eliminar profesional" aria-label="Eliminar profesional <?= e($pro['nombre'] . ' ' . $pro['apellido']) ?>">&#128465;</button></form></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -633,18 +665,14 @@ function badgeEstado(string $estado): string
             </section>
 
             <section class="panel" id="panel-pacientes">
-                <div class="actions">
-                    <button id="btn-crear-paciente" class="action-toggle" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente">Crear paciente</button>
-                </div>
-
                 <section class="detalle-frame-panel" id="detalle-paciente-panel">
                     <iframe id="detallePacienteFrame" title="Detalle del paciente" src="about:blank"></iframe>
-                    <div class="frame-footer">
-                        <p class="frame-label" id="detalleFrameTitulo">Detalle del paciente</p>
-                    </div>
                 </section>
 
-                <h3 class="table-title">Listado de pacientes</h3>
+                <div class="table-title-row">
+                    <h3 class="table-title">Listado de pacientes</h3>
+                    <button id="btn-crear-paciente" class="add-button" type="button" data-open-iframe="/Sanpablo/public/paciente_crear.php" data-frame-title="Crear paciente" title="Crear paciente" aria-label="Crear paciente">+</button>
+                </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -658,11 +686,12 @@ function badgeEstado(string $estado): string
                                 <th>Estado</th>
                                 <th>Profesional</th>
                                 <th>Detalle</th>
+                                <th>Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php if (count($pacientes) === 0): ?>
-                            <tr><td colspan="9">No hay pacientes registrados.</td></tr>
+                            <tr><td colspan="10">No hay pacientes registrados.</td></tr>
                         <?php else: ?>
                             <?php foreach ($pacientes as $pac): ?>
                                 <tr>
@@ -672,30 +701,10 @@ function badgeEstado(string $estado): string
                                     <td><?= e((string) ($pac['colegio'] ?? '-')) ?></td>
                                     <td><?= e((string) $pac['nombre_acudiente']) ?></td>
                                     <td><?= e((string) $pac['contacto_acudiente']) ?></td>
-                                    <td>
-                                        <form method="post" action="" class="inline-form">
-                                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                            <input type="hidden" name="accion" value="actualizar_paciente">
-                                            <input type="hidden" name="id" value="<?= e((string) $pac['id']) ?>">
-                                            <input type="hidden" name="documento_identidad" value="<?= e((string) $pac['documento_identidad']) ?>">
-                                            <input type="hidden" name="nombre" value="<?= e((string) $pac['nombre']) ?>">
-                                            <input type="hidden" name="apellido" value="<?= e((string) $pac['apellido']) ?>">
-                                            <input type="hidden" name="fecha_nacimiento" value="<?= e((string) $pac['fecha_nacimiento']) ?>">
-                                            <input type="hidden" name="nombre_acudiente" value="<?= e((string) $pac['nombre_acudiente']) ?>">
-                                            <input type="hidden" name="contacto_acudiente" value="<?= e((string) $pac['contacto_acudiente']) ?>">
-                                            <input type="hidden" name="colegio" value="<?= e((string) ($pac['colegio'] ?? '')) ?>">
-                                            <input type="hidden" name="tipo_discapacidad" value="<?= e((string) ($pac['tipo_discapacidad'] ?? 'Intelectual')) ?>">
-                                            <input type="hidden" name="otra_discapacidad" value="<?= e((string) ($pac['otra_discapacidad'] ?? '')) ?>">
-                                            <input type="hidden" name="observaciones_iniciales" value="<?= e((string) $pac['observaciones_iniciales']) ?>">
-                                            <select name="estado" onchange="this.form.submit()">
-                                                <option value="activo" <?= selected((string) $pac['estado'], 'activo') ?>>Activo</option>
-                                                <option value="inactivo" <?= selected((string) $pac['estado'], 'inactivo') ?>>Inactivo</option>
-                                                <option value="finalizado" <?= selected((string) $pac['estado'], 'finalizado') ?>>Finalizado</option>
-                                            </select>
-                                        </form>
-                                    </td>
+                                    <td><span class="status-label <?= $pac['estado'] === 'activo' ? 'status-active' : ($pac['estado'] === 'finalizado' ? 'status-finished' : 'status-inactive') ?>"><?= e((string) $pac['estado']) ?></span></td>
                                     <td><?= e((string) ($pac['profesional_nombre'] ?? '-')) ?></td>
                                     <td><button class="link-btn" type="button" data-paciente-id="<?= e((string) $pac['id']) ?>">Ver detalle</button></td>
+                                    <td><form method="post" action="" class="delete-form" onsubmit="return confirm('¿Eliminar este paciente y sus registros relacionados? Esta acción no se puede deshacer.');"><input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>"><input type="hidden" name="accion" value="eliminar_paciente"><input type="hidden" name="id" value="<?= e((string) $pac['id']) ?>"><button class="delete-button" type="submit" title="Eliminar paciente" aria-label="Eliminar paciente <?= e($pac['nombre'] . ' ' . $pac['apellido']) ?>">&#128465;</button></form></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -783,20 +792,24 @@ function badgeEstado(string $estado): string
                 });
             });
 
+            function abrirCreacionPaciente(boton) {
+                const targetUrl = boton.dataset.openIframe || '';
+                const targetTitle = boton.dataset.frameTitle || 'Crear paciente';
+
+                if (detailFrame) {
+                    detailFrame.src = targetUrl;
+                }
+
+                if (detalleFrameTitulo) {
+                    detalleFrameTitulo.textContent = targetTitle;
+                }
+
+                setIframePacienteActivo(true);
+            }
+
             if (crearPacienteBtn) {
                 crearPacienteBtn.addEventListener('click', function () {
-                    const targetUrl = crearPacienteBtn.dataset.openIframe || '';
-                    const targetTitle = crearPacienteBtn.dataset.frameTitle || 'Crear paciente';
-
-                    if (detailFrame) {
-                        detailFrame.src = targetUrl;
-                    }
-
-                    if (detalleFrameTitulo) {
-                        detalleFrameTitulo.textContent = targetTitle;
-                    }
-
-                    setIframePacienteActivo(true);
+                    abrirCreacionPaciente(crearPacienteBtn);
                 });
             }
 
@@ -843,6 +856,25 @@ function badgeEstado(string $estado): string
             });
 
             showOverview();
+
+            const documentosProfesionalContainer = document.getElementById('documentosProfesionalContainer');
+            const addProfesionalDocument = document.getElementById('addProfesionalDocument');
+            if (documentosProfesionalContainer && addProfesionalDocument) {
+                addProfesionalDocument.addEventListener('click', function () {
+                    const fila = documentosProfesionalContainer.querySelector('.document-profesional-row').cloneNode(true);
+                    fila.querySelector('select').value = '';
+                    fila.querySelector('[data-profesional-file]').value = '';
+                    fila.querySelector('[data-remove-profesional-document]').style.display = 'inline-block';
+                    documentosProfesionalContainer.appendChild(fila);
+                });
+
+                documentosProfesionalContainer.addEventListener('click', function (event) {
+                    const boton = event.target.closest('[data-remove-profesional-document]');
+                    if (boton) {
+                        boton.closest('.document-profesional-row').remove();
+                    }
+                });
+            }
         })();
     </script>
 </body>
