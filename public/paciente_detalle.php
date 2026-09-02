@@ -76,20 +76,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=objetivos');
             }
 
-            if ($accion === 'evaluar_objetivo') {
-                $objetivoId = (int) ($_POST['objetivo_id'] ?? 0);
-                $estadoObjetivo = trim((string) ($_POST['estado_objetivo'] ?? 'pendiente'));
-                $observacion = trim((string) ($_POST['observacion_objetivo'] ?? ''));
-
-                if ($objetivoId <= 0 || !in_array($estadoObjetivo, ['pendiente', 'cumplido', 'no_cumplido'], true)) {
-                    throw new InvalidArgumentException('La evaluacion del objetivo no es valida.');
-                }
-                if ($estadoObjetivo === 'no_cumplido' && $observacion === '') {
-                    throw new InvalidArgumentException('Escribe una observacion cuando el objetivo no se cumple.');
+            if ($accion === 'guardar_evaluaciones_objetivos') {
+                if (!$esVistaProfesional) {
+                    throw new RuntimeException('Solo el profesional puede evaluar objetivos.');
                 }
 
-                $pacienteModel->actualizarObjetivoEspecifico($pacienteId, $objetivoId, $estadoObjetivo, $observacion);
-                flash('ok', 'Evaluacion del objetivo guardada correctamente.');
+                $evaluaciones = $_POST['evaluaciones'] ?? [];
+                if (!is_array($evaluaciones) || $evaluaciones === []) {
+                    throw new InvalidArgumentException('No hay evaluaciones para guardar.');
+                }
+
+                foreach ($evaluaciones as $objetivoId => $evaluacion) {
+                    $id = (int) $objetivoId;
+                    $estadoObjetivo = trim((string) ($evaluacion['estado'] ?? 'pendiente'));
+                    $observacion = trim((string) ($evaluacion['observacion'] ?? ''));
+
+                    if ($id <= 0 || !in_array($estadoObjetivo, ['pendiente', 'cumplido', 'no_cumplido'], true)) {
+                        throw new InvalidArgumentException('La evaluacion del objetivo no es valida.');
+                    }
+                    if (in_array($estadoObjetivo, ['pendiente', 'no_cumplido'], true) && $observacion === '') {
+                        throw new InvalidArgumentException('Escribe una observacion para cada objetivo pendiente o no cumplido.');
+                    }
+
+                    $pacienteModel->actualizarObjetivoEspecifico($pacienteId, $id, $estadoObjetivo, $observacion);
+                }
+
+                flash('ok', 'Evaluaciones de objetivos guardadas correctamente.');
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=objetivos');
             }
 
@@ -589,29 +601,29 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                 <input type="hidden" name="accion" value="actualizar_paciente">
                 <div class="field-grid">
-                    <div class="field"><label>Documento</label><input type="text" name="documento_identidad" value="<?= e((string) $paciente['documento_identidad']) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?> required></div>
-                    <div class="field"><label>Fecha nacimiento</label><input type="date" name="fecha_nacimiento" value="<?= e((string) $paciente['fecha_nacimiento']) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?> required></div>
-                    <div class="field"><label>Nombre</label><input type="text" name="nombre" value="<?= e((string) $paciente['nombre']) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?> required></div>
-                    <div class="field"><label>Apellido</label><input type="text" name="apellido" value="<?= e((string) $paciente['apellido']) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?> required></div>
-                    <div class="field"><label>Colegio</label><input type="text" name="colegio" value="<?= e((string) ($paciente['colegio'] ?? '')) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>></div>
+                    <div class="field"><label>Documento</label><input type="text" name="documento_identidad" value="<?= e((string) $paciente['documento_identidad']) ?>" disabled required></div>
+                    <div class="field"><label>Fecha nacimiento</label><input type="date" name="fecha_nacimiento" value="<?= e((string) $paciente['fecha_nacimiento']) ?>" disabled required></div>
+                    <div class="field"><label>Nombre</label><input type="text" name="nombre" value="<?= e((string) $paciente['nombre']) ?>" disabled required></div>
+                    <div class="field"><label>Apellido</label><input type="text" name="apellido" value="<?= e((string) $paciente['apellido']) ?>" disabled required></div>
+                    <div class="field"><label>Colegio</label><input type="text" name="colegio" value="<?= e((string) ($paciente['colegio'] ?? '')) ?>" disabled></div>
                     <div class="field"><label>Estado</label>
-                        <select name="estado" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>>
+                        <select name="estado" disabled>
                             <option value="activo" <?= ((string) $paciente['estado'] === 'activo') ? 'selected' : '' ?>>Activo</option>
                             <option value="inactivo" <?= ((string) $paciente['estado'] === 'inactivo') ? 'selected' : '' ?>>Inactivo</option>
                             <option value="finalizado" <?= ((string) $paciente['estado'] === 'finalizado') ? 'selected' : '' ?>>Finalizado</option>
                         </select>
                     </div>
                     <div class="field"><label>Tipo discapacidad</label>
-                        <select name="tipo_discapacidad" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?> required>
+                        <select name="tipo_discapacidad" disabled required>
                             <?php foreach (['Intelectual', 'Sensorial', 'Física', 'Psicosocial', 'Múltiple', 'Otro'] as $tipo): ?>
                                 <option value="<?= e($tipo) ?>" <?= ((string) $paciente['tipo_discapacidad'] === $tipo) ? 'selected' : '' ?>><?= e($tipo) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="field"><label>Otra discapacidad</label><input type="text" name="otra_discapacidad" value="<?= e((string) ($paciente['otra_discapacidad'] ?? '')) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>></div>
-                    <div class="field"><label>Acudiente</label><input type="text" name="nombre_acudiente" value="<?= e((string) ($paciente['nombre_acudiente'] ?? '')) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>></div>
-                    <div class="field"><label>Contacto</label><input type="text" name="contacto_acudiente" value="<?= e((string) ($paciente['contacto_acudiente'] ?? '')) ?>" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>></div>
-                    <div class="field full"><label>Observaciones</label><textarea name="observaciones_iniciales" <?= $esVistaAdmin ? 'disabled' : 'disabled' ?>><?= e((string) ($paciente['observaciones_iniciales'] ?? '')) ?></textarea></div>
+                    <div class="field"><label>Otra discapacidad</label><input type="text" name="otra_discapacidad" value="<?= e((string) ($paciente['otra_discapacidad'] ?? '')) ?>" disabled></div>
+                    <div class="field"><label>Acudiente</label><input type="text" name="nombre_acudiente" value="<?= e((string) ($paciente['nombre_acudiente'] ?? '')) ?>" disabled></div>
+                    <div class="field"><label>Contacto</label><input type="text" name="contacto_acudiente" value="<?= e((string) ($paciente['contacto_acudiente'] ?? '')) ?>" disabled></div>
+                    <div class="field full"><label>Observaciones</label><textarea name="observaciones_iniciales" disabled><?= e((string) ($paciente['observaciones_iniciales'] ?? '')) ?></textarea></div>
                 </div>
             </form>
         </div>
@@ -671,6 +683,11 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
         <?php if (count($objetivosEspecificos) === 0): ?>
             <p>Aun no hay objetivos especificos registrados.</p>
         <?php else: ?>
+            <?php if ($esVistaProfesional): ?>
+            <form method="post" action="" id="formEvaluacionesObjetivos">
+                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="accion" value="guardar_evaluaciones_objetivos">
+            <?php endif; ?>
             <table>
                 <thead><tr><th>Codigo</th><th>Objetivo</th><th>Evaluacion</th></tr></thead>
                 <tbody>
@@ -680,25 +697,20 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                             <td><?= e((string) $objetivo['descripcion']) ?></td>
                             <td>
                                 <?php if ($esVistaAdmin): ?>
-                                    <span class="objetivo-estado <?= $objetivo['estado'] === 'no_cumplido' ? 'no-cumplido' : '' ?>"
-                                          <?= $objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion']) ? 'data-observacion="' . e((string) $objetivo['observacion']) . '"' : '' ?>>
+                                    <span class="objetivo-estado <?= in_array($objetivo['estado'], ['no_cumplido', 'pendiente'], true) ? 'no-cumplido' : '' ?>">
                                         <?= e((string) $objetivo['estado']) ?>
+                                        <?php if (!empty($objetivo['observacion'])): ?>
+                                            <span class="tooltip-observacion"><?= e((string) $objetivo['observacion']) ?></span>
+                                        <?php endif; ?>
                                     </span>
-                                    <?php if ($objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion'])): ?>
-                                        <div class="tooltip-observacion"><?= e((string) $objetivo['observacion']) ?></div>
-                                    <?php endif; ?>
                                 <?php else: ?>
                                     <div class="evaluacion-container">
-                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                        <input type="hidden" name="accion" value="evaluar_objetivo">
-                                        <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
-                                        <input type="hidden" name="observacion_objetivo" id="observacion_<?= e((string) $objetivo['id']) ?>" value="<?= e((string) ($objetivo['observacion'] ?? '')) ?>">
-                                        <select name="estado_objetivo" class="estado-objetivo" data-objetivo-id="<?= e((string) $objetivo['id']) ?>">
+                                        <input type="hidden" name="evaluaciones[<?= e((string) $objetivo['id']) ?>][observacion]" id="observacion_<?= e((string) $objetivo['id']) ?>" value="<?= e((string) ($objetivo['observacion'] ?? '')) ?>">
+                                        <select name="evaluaciones[<?= e((string) $objetivo['id']) ?>][estado]" class="estado-objetivo" data-objetivo-id="<?= e((string) $objetivo['id']) ?>">
                                             <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
                                             <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
                                             <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
                                         </select>
-                                        <button class="btn btn-secondary btn-guardar-evaluacion" type="button" data-objetivo-id="<?= e((string) $objetivo['id']) ?>">Guardar</button>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -706,6 +718,10 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <?php if ($esVistaProfesional): ?>
+                <button class="btn" type="submit">Guardar evaluaciones</button>
+            </form>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -769,7 +785,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
     </div>
 
     <script>
-        (function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const botonesSeccion = document.querySelectorAll('[data-section]');
             const botonesRedireccion = document.querySelectorAll('[data-open-url]');
             const paneles = {
@@ -854,101 +870,39 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const formEditarPaciente = document.getElementById('formEditarPaciente');
             let modoEdicion = false;
 
-            // Modal de observaciones
             const modalObservacion = document.getElementById('modalObservacion');
             const formObservacion = document.getElementById('formObservacion');
             const objetivoIdModal = document.getElementById('objetivoIdModal');
             const cerrarModalObservacion = document.getElementById('cerrarModalObservacion');
             const cancelarObservacion = document.getElementById('cancelarObservacion');
             const textareaObservacion = formObservacion.querySelector('[name="observacion_objetivo"]');
-            let currentForm = null;
-            let waitingForObservacion = false;
+            const etiquetaObservacion = document.getElementById('etiquetaObservacion');
 
             document.querySelectorAll('.estado-objetivo').forEach((select) => {
                 select.addEventListener('change', function () {
-                    currentForm = this.form;
-                    if (this.value === 'no_cumplido') {
-                        const objetivoId = this.form.querySelector('[name="objetivo_id"]').value;
-                        const observacionActual = document.getElementById('observacion_' + objetivoId).value;
-                        objetivoIdModal.value = objetivoId;
-                        textareaObservacion.value = observacionActual;
-                        modalObservacion.classList.add('active');
-                        waitingForObservation = true;
-                    } else {
-                        waitingForObservation = false;
+                    if (!['pendiente', 'no_cumplido'].includes(this.value)) {
+                        return;
                     }
-                });
-            });
 
-            // Botones de guardar
-            document.querySelectorAll('.btn-guardar-evaluacion').forEach((btn) => {
-                btn.addEventListener('click', function () {
                     const objetivoId = this.getAttribute('data-objetivo-id');
-                    const container = this.closest('.evaluacion-container');
-                    const select = container.querySelector('.estado-objetivo');
-                    const csrfToken = container.querySelector('[name="csrf_token"]').value;
-                    const observacion = document.getElementById('observacion_' + objetivoId).value;
-
-                    // Crear y enviar formulario
-                    const form = document.createElement('form');
-                    form.method = 'post';
-                    form.action = '';
-
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrf_token';
-                    csrfInput.value = csrfToken;
-
-                    const accionInput = document.createElement('input');
-                    accionInput.type = 'hidden';
-                    accionInput.name = 'accion';
-                    accionInput.value = 'evaluar_objetivo';
-
-                    const objetivoIdInput = document.createElement('input');
-                    objetivoIdInput.type = 'hidden';
-                    objetivoIdInput.name = 'objetivo_id';
-                    objetivoIdInput.value = objetivoId;
-
-                    const estadoInput = document.createElement('input');
-                    estadoInput.type = 'hidden';
-                    estadoInput.name = 'estado_objetivo';
-                    estadoInput.value = select.value;
-
-                    const observacionInput = document.createElement('input');
-                    observacionInput.type = 'hidden';
-                    observacionInput.name = 'observacion_objetivo';
-                    observacionInput.value = observacion;
-
-                    form.appendChild(csrfInput);
-                    form.appendChild(accionInput);
-                    form.appendChild(objetivoIdInput);
-                    form.appendChild(estadoInput);
-                    form.appendChild(observacionInput);
-
-                    document.body.appendChild(form);
-                    form.submit();
+                    objetivoIdModal.value = objetivoId;
+                    textareaObservacion.value = document.getElementById('observacion_' + objetivoId).value;
+                    etiquetaObservacion.textContent = this.value === 'pendiente'
+                        ? '¿Por qué el objetivo está pendiente?'
+                        : '¿Por qué no se cumplió el objetivo?';
+                    modalObservacion.classList.add('active');
+                    textareaObservacion.focus();
                 });
             });
 
-            formObservacion.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const formData = new FormData(formObservacion);
-                const observacion = formData.get('observacion_objetivo');
-                const objetivoId = formData.get('objetivo_id');
-
-                // Guardar la observación en el campo oculto del formulario original
+            formObservacion.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const objetivoId = objetivoIdModal.value;
                 const observacionField = document.getElementById('observacion_' + objetivoId);
                 if (observacionField) {
-                    observacionField.value = observacion;
+                    observacionField.value = textareaObservacion.value.trim();
                 }
-
                 modalObservacion.classList.remove('active');
-                waitingForObservation = false;
-
-                // Enviar el formulario original
-                if (currentForm) {
-                    currentForm.submit();
-                }
             });
 
             if (cerrarModalObservacion) {
@@ -991,78 +945,6 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 
             mostrarSeccion('<?= e($seccionActiva) ?>');
 
-            // Modal de observaciones - Lógica simplificada
-            const modalObservacion = document.getElementById('modalObservacion');
-            const formObservacion = document.getElementById('formObservacion');
-            const objetivoIdModal = document.getElementById('objetivoIdModal');
-            const textareaObservacion = formObservacion.querySelector('[name="observacion_objetivo"]');
-            let currentContainer = null;
-
-            document.querySelectorAll('.estado-objetivo').forEach((select) => {
-                select.addEventListener('change', function () {
-                    currentContainer = this.closest('.evaluacion-container');
-                    if (this.value === 'no_cumplido') {
-                        const objetivoId = this.getAttribute('data-objetivo-id');
-                        const observacionActual = document.getElementById('observacion_' + objetivoId).value;
-                        objetivoIdModal.value = objetivoId;
-                        textareaObservacion.value = observacionActual;
-                        modalObservacion.classList.add('active');
-                    }
-                });
-            });
-
-            // Botones de guardar evaluación
-            document.querySelectorAll('.btn-guardar-evaluacion').forEach((btn) => {
-                btn.addEventListener('click', function () {
-                    const objetivoId = this.getAttribute('data-objetivo-id');
-                    const container = this.closest('.evaluacion-container');
-                    const select = container.querySelector('.estado-objetivo');
-                    const csrfToken = container.querySelector('[name="csrf_token"]').value;
-                    const observacion = document.getElementById('observacion_' + objetivoId).value;
-
-                    const form = document.createElement('form');
-                    form.method = 'post';
-                    form.action = '';
-
-                    const inputs = [
-                        {name: 'csrf_token', value: csrfToken},
-                        {name: 'accion', value: 'evaluar_objetivo'},
-                        {name: 'objetivo_id', value: objetivoId},
-                        {name: 'estado_objetivo', value: select.value},
-                        {name: 'observacion_objetivo', value: observacion}
-                    ];
-
-                    inputs.forEach(input => {
-                        const inputEl = document.createElement('input');
-                        inputEl.type = 'hidden';
-                        inputEl.name = input.name;
-                        inputEl.value = input.value;
-                        form.appendChild(inputEl);
-                    });
-
-                    document.body.appendChild(form);
-                    form.submit();
-                });
-            });
-
-            formObservacion.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const observacion = textareaObservacion.value;
-                const objetivoId = objetivoIdModal.value;
-
-                const observacionField = document.getElementById('observacion_' + objetivoId);
-                if (observacionField) {
-                    observacionField.value = observacion;
-                }
-
-                modalObservacion.classList.remove('active');
-
-                if (currentContainer) {
-                    const btn = currentContainer.querySelector('.btn-guardar-evaluacion');
-                    btn.click();
-                }
-            });
-
             // Validación de tipo de archivo para foto
             const tipoSelect = document.getElementById('tipoDocumentoSelect');
             const archivoInput = document.getElementById('archivoInput');
@@ -1075,7 +957,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                     }
                 });
             }
-        })();
+        });
     </script>
 
     <?= renderIframeNavButtons() ?>
@@ -1093,7 +975,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 <input type="hidden" name="objetivo_id" id="objetivoIdModal">
                 <input type="hidden" name="estado_objetivo" value="no_cumplido">
                 <div class="field">
-                    <label>¿Por qué no se cumplió el objetivo?</label>
+                    <label id="etiquetaObservacion">¿Por qué no se cumplió el objetivo?</label>
                     <textarea name="observacion_objetivo" required placeholder="Describe las razones por las que no se cumplió el objetivo"></textarea>
                 </div>
                 <div class="actions">
