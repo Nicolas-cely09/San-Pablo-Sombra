@@ -325,7 +325,7 @@ final class PacienteModel
         return $stmt->fetchAll();
     }
 
-    public function crearObjetivoEspecifico(int $pacienteId, string $descripcion, string $frecuencia): void
+    public function crearObjetivoEspecifico(int $pacienteId, string $descripcion, string $frecuencia = 'Semanal'): void
     {
         $this->asegurarTablaObjetivos();
 

@@ -62,13 +62,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($accion === 'crear_objetivo_especifico') {
-                $descripcion = trim((string) ($_POST['descripcion_objetivo'] ?? ''));
-                $frecuencia = trim((string) ($_POST['frecuencia'] ?? ''));
-                if ($descripcion === '' || !in_array($frecuencia, ['Semanal', 'Quincenal'], true)) {
-                    throw new InvalidArgumentException('Completa la descripcion y una frecuencia valida.');
+                if (!$esVistaAdmin) {
+                    throw new RuntimeException('Solo el administrador puede crear objetivos especificos.');
                 }
 
-                $pacienteModel->crearObjetivoEspecifico($pacienteId, $descripcion, $frecuencia);
+                $descripcion = trim((string) ($_POST['descripcion_objetivo'] ?? ''));
+                if ($descripcion === '') {
+                    throw new InvalidArgumentException('La descripcion del objetivo es obligatoria.');
+                }
+
+                $pacienteModel->crearObjetivoEspecifico($pacienteId, $descripcion, 'Semanal');
                 flash('ok', 'Objetivo especifico agregado correctamente.');
                 redirect('/Sanpablo/public/paciente_detalle.php?id=' . $pacienteId . '&section=objetivos');
             }
@@ -425,6 +428,95 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             .actions .btn { width: 100%; }
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+        .objetivo-estado {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: help;
+        }
+
+        .objetivo-estado.no-cumplido {
+            background: #ffe6eb;
+            color: #9f2444;
+            border: 1px solid #ffc9d8;
+        }
+
+        .objetivo-estado:not(.no-cumplido) {
+            background: #e4f8d5;
+            color: #4a7b14;
+            border: 1px solid #cbeab0;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 14px 34px rgba(30, 54, 88, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #24486f;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #61708a;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #222;
+        }
+
+        .btn-observacion {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
     </style>
 </head>
 <body>
@@ -513,40 +605,45 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             <h3>Objetivos especificos</h3>
             <button class="btn btn-secondary btn-add-objective" type="button" id="btnNuevoObjetivo" aria-label="Añadir objetivo especifico" aria-expanded="false">+</button>
         </div>
+        <?php if ($esVistaAdmin): ?>
         <form method="post" action="" class="objective-create-form" id="formNuevoObjetivo">
             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
             <input type="hidden" name="accion" value="crear_objetivo_especifico">
             <div class="field-grid">
                 <div class="field full"><label>Descripcion del objetivo</label><textarea name="descripcion_objetivo" required placeholder="Describe el resultado observable que se evaluara"></textarea></div>
-                <div class="field"><label>Frecuencia de evaluacion</label><select name="frecuencia" required><option value="Semanal">Semanal</option><option value="Quincenal">Quincenal</option></select></div>
             </div>
             <button class="btn btn-secondary" type="submit">Guardar objetivo especifico</button>
         </form>
+        <?php endif; ?>
 
         <?php if (count($objetivosEspecificos) === 0): ?>
             <p>Aun no hay objetivos especificos registrados.</p>
         <?php else: ?>
             <table>
-                <thead><tr><th>Codigo</th><th>Objetivo</th><th>Frecuencia</th><th>Evaluacion</th></tr></thead>
+                <thead><tr><th>Codigo</th><th>Objetivo</th><th>Evaluacion</th></tr></thead>
                 <tbody>
                     <?php foreach ($objetivosEspecificos as $objetivo): ?>
                         <tr>
                             <td><strong><?= e((string) $objetivo['codigo']) ?></strong></td>
                             <td><?= e((string) $objetivo['descripcion']) ?></td>
-                            <td><?= e((string) $objetivo['frecuencia']) ?></td>
                             <td>
-                                <form method="post" action="">
-                                    <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                    <input type="hidden" name="accion" value="evaluar_objetivo">
-                                    <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
-                                    <select name="estado_objetivo" class="estado-objetivo">
-                                        <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                        <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
-                                        <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
-                                    </select>
-                                    <textarea name="observacion_objetivo" class="observacion-objetivo" placeholder="Observacion si no se cumplio"><?= e((string) ($objetivo['observacion'] ?? '')) ?></textarea>
-                                    <button class="btn" type="submit">Guardar evaluacion</button>
-                                </form>
+                                <?php if ($esVistaAdmin): ?>
+                                    <span class="objetivo-estado <?= $objetivo['estado'] === 'no_cumplido' ? 'no-cumplido' : '' ?>" <?= $objetivo['estado'] === 'no_cumplido' && !empty($objetivo['observacion']) ? 'title="' . e((string) $objetivo['observacion']) . '"' : '' ?>>
+                                        <?= e((string) $objetivo['estado']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <form method="post" action="">
+                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                        <input type="hidden" name="accion" value="evaluar_objetivo">
+                                        <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
+                                        <select name="estado_objetivo" class="estado-objetivo">
+                                            <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                            <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
+                                            <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
+                                        </select>
+                                        <button class="btn btn-secondary btn-observacion" type="button" <?= $objetivo['estado'] !== 'no_cumplido' ? 'style="display:none;"' : '' ?>>Agregar observación</button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -700,14 +797,47 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const formEditarPaciente = document.getElementById('formEditarPaciente');
             let modoEdicion = false;
 
+            // Modal de observaciones
+            const modalObservacion = document.getElementById('modalObservacion');
+            const formObservacion = document.getElementById('formObservacion');
+            const objetivoIdModal = document.getElementById('objetivoIdModal');
+            const cerrarModalObservacion = document.getElementById('cerrarModalObservacion');
+            const cancelarObservacion = document.getElementById('cancelarObservacion');
+
             document.querySelectorAll('.estado-objetivo').forEach((select) => {
-                const observacion = select.form.querySelector('.observacion-objetivo');
+                const btnObservacion = select.form.querySelector('.btn-observacion');
                 const sincronizarObservacion = () => {
-                    observacion.classList.toggle('visible', select.value === 'no_cumplido');
-                    observacion.required = select.value === 'no_cumplido';
+                    if (btnObservacion) {
+                        btnObservacion.style.display = select.value === 'no_cumplido' ? 'inline-block' : 'none';
+                    }
                 };
                 select.addEventListener('change', sincronizarObservacion);
                 sincronizarObservacion();
+
+                if (btnObservacion) {
+                    btnObservacion.addEventListener('click', function () {
+                        objetivoIdModal.value = select.form.querySelector('[name="objetivo_id"]').value;
+                        modalObservacion.classList.add('active');
+                    });
+                }
+            });
+
+            if (cerrarModalObservacion) {
+                cerrarModalObservacion.addEventListener('click', function () {
+                    modalObservacion.classList.remove('active');
+                });
+            }
+
+            if (cancelarObservacion) {
+                cancelarObservacion.addEventListener('click', function () {
+                    modalObservacion.classList.remove('active');
+                });
+            }
+
+            modalObservacion.addEventListener('click', function (e) {
+                if (e.target === modalObservacion) {
+                    modalObservacion.classList.remove('active');
+                }
             });
 
             if (btnModificar && formEditarPaciente) {
@@ -748,5 +878,29 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
     </script>
 
     <?= renderIframeNavButtons() ?>
+
+    <!-- Modal para observaciones de objetivos -->
+    <div class="modal-overlay" id="modalObservacion">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Observación del objetivo no cumplido</h3>
+                <button class="modal-close" type="button" id="cerrarModalObservacion">&times;</button>
+            </div>
+            <form method="post" action="" id="formObservacion">
+                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="accion" value="evaluar_objetivo">
+                <input type="hidden" name="objetivo_id" id="objetivoIdModal">
+                <input type="hidden" name="estado_objetivo" value="no_cumplido">
+                <div class="field">
+                    <label>¿Por qué no se cumplió el objetivo?</label>
+                    <textarea name="observacion_objetivo" required placeholder="Describe las razones por las que no se cumplió el objetivo"></textarea>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-secondary" type="button" id="cancelarObservacion">Cancelar</button>
+                    <button class="btn" type="submit">Guardar observación</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
