@@ -484,6 +484,24 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             display: block;
         }
 
+        .btn-guardar-evaluacion {
+            margin-left: 8px;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+        }
+
+        .form-evaluacion-objetivo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .evaluacion-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .modal-overlay {
             display: none;
             position: fixed;
@@ -670,16 +688,18 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                                         <div class="tooltip-observacion"><?= e((string) $objetivo['observacion']) ?></div>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <form method="post" action="">
+                                    <div class="evaluacion-container">
                                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                                         <input type="hidden" name="accion" value="evaluar_objetivo">
                                         <input type="hidden" name="objetivo_id" value="<?= e((string) $objetivo['id']) ?>">
-                                        <select name="estado_objetivo" class="estado-objetivo">
+                                        <input type="hidden" name="observacion_objetivo" id="observacion_<?= e((string) $objetivo['id']) ?>" value="<?= e((string) ($objetivo['observacion'] ?? '')) ?>">
+                                        <select name="estado_objetivo" class="estado-objetivo" data-objetivo-id="<?= e((string) $objetivo['id']) ?>">
                                             <option value="pendiente" <?= $objetivo['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
                                             <option value="cumplido" <?= $objetivo['estado'] === 'cumplido' ? 'selected' : '' ?>>Cumplido</option>
                                             <option value="no_cumplido" <?= $objetivo['estado'] === 'no_cumplido' ? 'selected' : '' ?>>No cumplido</option>
                                         </select>
-                                    </form>
+                                        <button class="btn btn-secondary btn-guardar-evaluacion" type="button" data-objetivo-id="<?= e((string) $objetivo['id']) ?>">Guardar</button>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -840,14 +860,95 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
             const objetivoIdModal = document.getElementById('objetivoIdModal');
             const cerrarModalObservacion = document.getElementById('cerrarModalObservacion');
             const cancelarObservacion = document.getElementById('cancelarObservacion');
+            const textareaObservacion = formObservacion.querySelector('[name="observacion_objetivo"]');
+            let currentForm = null;
+            let waitingForObservacion = false;
 
             document.querySelectorAll('.estado-objetivo').forEach((select) => {
                 select.addEventListener('change', function () {
+                    currentForm = this.form;
                     if (this.value === 'no_cumplido') {
-                        objetivoIdModal.value = this.form.querySelector('[name="objetivo_id"]').value;
+                        const objetivoId = this.form.querySelector('[name="objetivo_id"]').value;
+                        const observacionActual = document.getElementById('observacion_' + objetivoId).value;
+                        objetivoIdModal.value = objetivoId;
+                        textareaObservacion.value = observacionActual;
                         modalObservacion.classList.add('active');
+                        waitingForObservation = true;
+                    } else {
+                        waitingForObservation = false;
                     }
                 });
+            });
+
+            // Botones de guardar
+            document.querySelectorAll('.btn-guardar-evaluacion').forEach((btn) => {
+                btn.addEventListener('click', function () {
+                    const objetivoId = this.getAttribute('data-objetivo-id');
+                    const container = this.closest('.evaluacion-container');
+                    const select = container.querySelector('.estado-objetivo');
+                    const csrfToken = container.querySelector('[name="csrf_token"]').value;
+                    const observacion = document.getElementById('observacion_' + objetivoId).value;
+
+                    // Crear y enviar formulario
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '';
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = csrfToken;
+
+                    const accionInput = document.createElement('input');
+                    accionInput.type = 'hidden';
+                    accionInput.name = 'accion';
+                    accionInput.value = 'evaluar_objetivo';
+
+                    const objetivoIdInput = document.createElement('input');
+                    objetivoIdInput.type = 'hidden';
+                    objetivoIdInput.name = 'objetivo_id';
+                    objetivoIdInput.value = objetivoId;
+
+                    const estadoInput = document.createElement('input');
+                    estadoInput.type = 'hidden';
+                    estadoInput.name = 'estado_objetivo';
+                    estadoInput.value = select.value;
+
+                    const observacionInput = document.createElement('input');
+                    observacionInput.type = 'hidden';
+                    observacionInput.name = 'observacion_objetivo';
+                    observacionInput.value = observacion;
+
+                    form.appendChild(csrfInput);
+                    form.appendChild(accionInput);
+                    form.appendChild(objetivoIdInput);
+                    form.appendChild(estadoInput);
+                    form.appendChild(observacionInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+
+            formObservacion.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(formObservacion);
+                const observacion = formData.get('observacion_objetivo');
+                const objetivoId = formData.get('objetivo_id');
+
+                // Guardar la observación en el campo oculto del formulario original
+                const observacionField = document.getElementById('observacion_' + objetivoId);
+                if (observacionField) {
+                    observacionField.value = observacion;
+                }
+
+                modalObservacion.classList.remove('active');
+                waitingForObservation = false;
+
+                // Enviar el formulario original
+                if (currentForm) {
+                    currentForm.submit();
+                }
             });
 
             if (cerrarModalObservacion) {
@@ -890,6 +991,78 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
 
             mostrarSeccion('<?= e($seccionActiva) ?>');
 
+            // Modal de observaciones - Lógica simplificada
+            const modalObservacion = document.getElementById('modalObservacion');
+            const formObservacion = document.getElementById('formObservacion');
+            const objetivoIdModal = document.getElementById('objetivoIdModal');
+            const textareaObservacion = formObservacion.querySelector('[name="observacion_objetivo"]');
+            let currentContainer = null;
+
+            document.querySelectorAll('.estado-objetivo').forEach((select) => {
+                select.addEventListener('change', function () {
+                    currentContainer = this.closest('.evaluacion-container');
+                    if (this.value === 'no_cumplido') {
+                        const objetivoId = this.getAttribute('data-objetivo-id');
+                        const observacionActual = document.getElementById('observacion_' + objetivoId).value;
+                        objetivoIdModal.value = objetivoId;
+                        textareaObservacion.value = observacionActual;
+                        modalObservacion.classList.add('active');
+                    }
+                });
+            });
+
+            // Botones de guardar evaluación
+            document.querySelectorAll('.btn-guardar-evaluacion').forEach((btn) => {
+                btn.addEventListener('click', function () {
+                    const objetivoId = this.getAttribute('data-objetivo-id');
+                    const container = this.closest('.evaluacion-container');
+                    const select = container.querySelector('.estado-objetivo');
+                    const csrfToken = container.querySelector('[name="csrf_token"]').value;
+                    const observacion = document.getElementById('observacion_' + objetivoId).value;
+
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '';
+
+                    const inputs = [
+                        {name: 'csrf_token', value: csrfToken},
+                        {name: 'accion', value: 'evaluar_objetivo'},
+                        {name: 'objetivo_id', value: objetivoId},
+                        {name: 'estado_objetivo', value: select.value},
+                        {name: 'observacion_objetivo', value: observacion}
+                    ];
+
+                    inputs.forEach(input => {
+                        const inputEl = document.createElement('input');
+                        inputEl.type = 'hidden';
+                        inputEl.name = input.name;
+                        inputEl.value = input.value;
+                        form.appendChild(inputEl);
+                    });
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+
+            formObservacion.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const observacion = textareaObservacion.value;
+                const objetivoId = objetivoIdModal.value;
+
+                const observacionField = document.getElementById('observacion_' + objetivoId);
+                if (observacionField) {
+                    observacionField.value = observacion;
+                }
+
+                modalObservacion.classList.remove('active');
+
+                if (currentContainer) {
+                    const btn = currentContainer.querySelector('.btn-guardar-evaluacion');
+                    btn.click();
+                }
+            });
+
             // Validación de tipo de archivo para foto
             const tipoSelect = document.getElementById('tipoDocumentoSelect');
             const archivoInput = document.getElementById('archivoInput');
@@ -925,7 +1098,7 @@ $seccionActiva = trim((string) ($_GET['section'] ?? ''));
                 </div>
                 <div class="actions">
                     <button class="btn btn-secondary" type="button" id="cancelarObservacion">Cancelar</button>
-                    <button class="btn" type="submit">Guardar</button>
+                    <button class="btn" type="submit">Guardar observación</button>
                 </div>
             </form>
         </div>
